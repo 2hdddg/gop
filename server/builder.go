@@ -1,4 +1,4 @@
-package main
+package server
 
 type Builder struct {
 	packages map[string]*Package
