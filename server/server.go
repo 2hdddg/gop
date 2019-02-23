@@ -3,19 +3,12 @@ package server
 import (
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
+	"net/rpc"
 	"path"
 	"sync"
 )
-
-type QueryRequest struct {
-	answerChan chan Answer
-	query      Query
-}
-
-/*
-:cgetexpr system("grep -n -r " . expand('<cword>') . " *")
-*/
 
 func probe(path string) (dirs, files []string) {
 	entries, err := ioutil.ReadDir(path)
@@ -35,7 +28,7 @@ func probe(path string) (dirs, files []string) {
 	return dirs, files
 }
 
-func parseFiles(p string, files []string, fileChan chan File) {
+func (b *build) parseFiles(p string, files []string) {
 	var waitGroup sync.WaitGroup
 
 	for _, tmp := range files {
@@ -44,71 +37,109 @@ func parseFiles(p string, files []string, fileChan chan File) {
 		go func() {
 			defer waitGroup.Done()
 			parsed := parseFile(path.Join(p, f))
-			fileChan <- *parsed
+			b.fileChan <- *parsed
 		}()
 	}
 	waitGroup.Wait()
 }
 
-func builder(fileChan chan File, indexChan chan Index) {
-	builder := NewBuilder()
+type packagesQuery struct {
+	answerChan chan *PackagesAnswer
+}
+
+type locationsQuery struct {
+	name       string
+	answerChan chan *LocationsAnswer
+}
+
+type PackagesAnswer struct {
+	Packages []string
+}
+
+type Location struct {
+	Line   int
+	Column int
+}
+
+type FileLocation struct {
+	Location
+	FilePath string
+}
+
+type LocationsAnswer struct {
+	Locations []FileLocation
+}
+
+type build struct {
+	fileChan  chan file
+	indexChan chan index
+}
+
+func (b *build) thread() {
+	builder := newBuilder()
 	for {
-		file := <-fileChan
-		builder.Add(&file)
-		indexChan <- builder.Build()
+		file := <-b.fileChan
+		builder.add(&file)
+		b.indexChan <- builder.build()
 	}
 }
 
-func searcher(indexChan chan Index, queryReqChan chan QueryRequest) {
-	var index Index
+type search struct {
+	indexChan     chan index
+	packQueryChan chan packagesQuery
+	locQueryChan  chan locationsQuery
+}
 
+func (s *search) thread() {
+	var currIndex index
 	for {
 		select {
-		case index = <-indexChan:
-			fmt.Println("Received new search index")
-		case queryReq := <-queryReqChan:
-			fmt.Printf("Received query: %T\n", queryReq.query)
-			queryReq.answerChan <- queryReq.query.Process(&index)
+		case currIndex = <-s.indexChan:
+
+		case q := <-s.packQueryChan:
+			q.answerChan <- currIndex.allPackages()
+
+		case q := <-s.locQueryChan:
+			q.answerChan <- currIndex.funcDefinition(q.name)
 		}
 	}
 }
 
-func queryRequest(queryReqChan chan QueryRequest, query Query) Answer {
-	answerChan := make(chan Answer)
-	queryReq := QueryRequest{answerChan: answerChan, query: query}
-	queryReqChan <- queryReq
-	answer := <-answerChan
-	return answer
+func (s *search) FuncDefinition(
+	name *string, a *LocationsAnswer) error {
+
+	answerChan := make(chan *LocationsAnswer)
+	query := locationsQuery{name: *name, answerChan: answerChan}
+	s.locQueryChan <- query
+	*a = *<-answerChan
+
+	return nil
 }
 
 func Run(port int) {
-	fileChan := make(chan File)
-	indexChan := make(chan Index)
-	queryReqChan := make(chan QueryRequest)
+	indexChan := make(chan index)
 
-	// Builds index of received files and sends index on channel.
-	go builder(fileChan, indexChan)
-	// Receives index used to process queries
-	go searcher(indexChan, queryReqChan)
+	search := search{
+		locQueryChan:  make(chan locationsQuery),
+		packQueryChan: make(chan packagesQuery),
+		indexChan:     indexChan}
+	go search.thread()
+
+	build := build{
+		fileChan:  make(chan file),
+		indexChan: indexChan}
+	go build.thread()
 
 	path := "/usr/share/go/src/io"
-	dirs, files := probe(path)
-	parseFiles(path, files, fileChan)
-	fmt.Println(dirs)
+	_, files := probe(path)
+	build.parseFiles(path, files)
 
-	http.HandleFunc("/packages",
-		func(w http.ResponseWriter, r *http.Request) {
-			query := &PackagesQuery{}
-			answer := queryRequest(queryReqChan, query)
-			answer.Response(w)
-		})
-	http.HandleFunc("/definition",
-		func(w http.ResponseWriter, r *http.Request) {
-			params := r.URL.Query()
-			query := &DefinitionQuery{name: params["name"][0]}
-			answer := queryRequest(queryReqChan, query)
-			answer.Response(w)
-		})
-
-	http.ListenAndServe(":8080", nil)
+	rpc.RegisterName("Search", &search)
+	rpc.HandleHTTP()
+	l, e := net.Listen("tcp", ":1234")
+	if e != nil {
+		fmt.Println("Fatal", e)
+		return
+	}
+	http.Serve(l, nil)
 }

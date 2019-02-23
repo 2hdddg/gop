@@ -1,57 +1,23 @@
 package server
 
-import (
-	"fmt"
-	"net/http"
-)
+import ()
 
-type Index struct {
-	packages map[string]Package
+type index struct {
+	packs map[string]pack
 }
 
-type Answer interface {
-	Response(w http.ResponseWriter)
-}
-
-type PackagesAnswer struct {
-	Packages []string
-}
-
-func (a *PackagesAnswer) Response(w http.ResponseWriter) {
-	fmt.Fprintf(w, "%v", *a)
-}
-
-type LocationsAnswer struct {
-	Locations []FileLocation
-}
-
-func (a *LocationsAnswer) Response(w http.ResponseWriter) {
-	fmt.Fprintf(w, "%v", *a)
-}
-
-type Query interface {
-	Process(i *Index) Answer
-}
-
-type PackagesQuery struct {
-}
-
-func (q *PackagesQuery) Process(i *Index) Answer {
-	var packages []string
-	for _, p := range i.packages {
-		packages = append(packages, p.Name)
+func (i *index) allPackages() *PackagesAnswer {
+	var packs []string
+	for _, p := range i.packs {
+		packs = append(packs, p.name)
 	}
-	return &PackagesAnswer{Packages: packages}
+	return &PackagesAnswer{Packages: packs}
 }
 
-type DefinitionQuery struct {
-	name string
-}
-
-func (q *DefinitionQuery) Process(i *Index) Answer {
+func (i *index) funcDefinition(name string) *LocationsAnswer {
 	var locations []FileLocation
-	for _, p := range i.packages {
-		l := p.Find(q.name)
+	for _, p := range i.packs {
+		l := p.find(name)
 		if l != nil {
 			locations = append(locations, *l)
 		}

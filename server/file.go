@@ -10,19 +10,14 @@ import (
 	"unicode/utf8"
 )
 
-type Location struct {
-	Line   int
-	Column int
+type file struct {
+	path     string
+	packName string
+	funcs    map[string]Location
 }
 
-type File struct {
-	Path    string
-	Package string
-	Funcs   map[string]Location
-}
-
-func (f *File) PackagePath() string {
-	return path.Dir(f.Path)
+func (f *file) packPath() string {
+	return path.Dir(f.path)
 }
 
 func isExported(name string) bool {
@@ -35,7 +30,7 @@ func parseFunc(fset *token.FileSet, o *ast.Object) Location {
 	return Location{Line: position.Line, Column: position.Column}
 }
 
-func parseFile(path string) *File {
+func parseFile(path string) *file {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, path, nil, 0)
 	if err != nil {
@@ -54,6 +49,6 @@ func parseFile(path string) *File {
 		}
 	}
 
-	parsed := File{Path: path, Package: packageName, Funcs: funcs}
+	parsed := file{path: path, packName: packageName, funcs: funcs}
 	return &parsed
 }

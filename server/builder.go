@@ -1,37 +1,37 @@
 package server
 
-type Builder struct {
-	packages map[string]*Package
+type builder struct {
+	packs map[string]*pack
 }
 
-func NewBuilder() *Builder {
-	packages := make(map[string]*Package)
-	return &Builder{packages: packages}
+func newBuilder() *builder {
+	packs := make(map[string]*pack)
+	return &builder{packs: packs}
 }
 
-func (i *Builder) ensurePackage(f *File) *Package {
-	path := f.PackagePath()
-	name := f.Package
+func (b *builder) ensurePackage(f *file) *pack {
+	path := f.packPath()
+	name := f.packName
 	key := path + name
 
-	p, exists := i.packages[key]
+	p, exists := b.packs[key]
 	if !exists {
-		p = NewPackage(path, name)
-		i.packages[key] = p
+		p = newPackage(path, name)
+		b.packs[key] = p
 	}
 
 	return p
 }
 
-func (i *Builder) Add(f *File) {
-	p := i.ensurePackage(f)
-	p.Merge(f)
+func (b *builder) add(f *file) {
+	p := b.ensurePackage(f)
+	p.merge(f)
 }
 
-func (i *Builder) Build() Index {
-	packages := make(map[string]Package)
-	for _, p := range i.packages {
-		packages[p.Name] = *p
+func (b *builder) build() index {
+	packs := make(map[string]pack)
+	for _, p := range b.packs {
+		packs[p.name] = *p
 	}
-	return Index{packages: packages}
+	return index{packs: packs}
 }
