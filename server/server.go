@@ -1,63 +1,12 @@
 package server
 
 import (
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
 	"net/rpc"
-	"path"
 	"strconv"
-	"strings"
-	"sync"
 )
-
-func probe(path string) (dirs, files []string) {
-	entries, err := ioutil.ReadDir(path)
-	if err != nil {
-		log.Printf("Error indexing package at %v: %v\n", path, err)
-		return nil, nil
-	}
-
-	for _, i := range entries {
-		mode := i.Mode()
-		name := i.Name()
-		if mode.IsDir() {
-			dirs = append(dirs, name)
-		} else if mode.IsRegular() && strings.LastIndex(name, ".go") > 0 {
-			files = append(files, name)
-		}
-	}
-	return dirs, files
-}
-
-func (b *build) parseFiles(p string, files []string) {
-	var waitGroup sync.WaitGroup
-
-	for _, tmp := range files {
-		waitGroup.Add(1)
-		f := tmp
-		go func() {
-			defer waitGroup.Done()
-			parsed, err := parseFile(path.Join(p, f))
-			if err == nil {
-				b.fileChan <- parsed
-			}
-		}()
-	}
-	waitGroup.Wait()
-}
-
-func (b *build) addToBuilder(p string) {
-	dirs, files := probe(p)
-
-	log.Printf("Analyzing %s", p)
-	b.parseFiles(p, files)
-
-	for _, dir := range dirs {
-		b.addToBuilder(path.Join(p, dir))
-	}
-}
 
 type packagesQuery struct {
 	answerChan chan *PackagesAnswer
@@ -152,12 +101,10 @@ func Run(port int) {
 		log.Fatalln("Invalid config")
 	}
 
-	/*
-		path := "/usr/share/go/src/io"
-		_, files := probe(path)
-		build.parseFiles(path, files)
-	*/
-	build.addToBuilder(config.goRoot)
+	// In go thread to be responsive to client requests, could
+	// of course cause in-complete answers but better than hanging
+	// or failing.
+	go config.system.build(build.fileChan)
 
 	log.Printf("Starting server on port %d", port)
 	err := rpc.RegisterName("Search", &search)
