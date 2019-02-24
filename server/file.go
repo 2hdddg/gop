@@ -30,12 +30,11 @@ func parseFunc(fset *token.FileSet, o *ast.Object) Location {
 	return Location{Line: position.Line, Column: position.Column}
 }
 
-func parseFile(path string) *file {
+func parseFile(path string) (*file, error) {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, path, nil, 0)
 	if err != nil {
-		fmt.Printf("Error while parsing %v: %v\n", path, err)
-		return nil
+		return nil, fmt.Errorf("Error while parsing %v: %v\n", path, err)
 	}
 
 	packageName := f.Name.Name
@@ -50,5 +49,5 @@ func parseFile(path string) *file {
 	}
 
 	parsed := file{path: path, packName: packageName, funcs: funcs}
-	return &parsed
+	return &parsed, nil
 }

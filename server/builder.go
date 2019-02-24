@@ -28,10 +28,10 @@ func (b *builder) add(f *file) {
 	p.merge(f)
 }
 
-func (b *builder) build() index {
+func (b *builder) build() *index {
 	packs := make(map[string]pack)
 	for _, p := range b.packs {
 		packs[p.name] = *p
 	}
-	return index{packs: packs}
+	return &index{packs: packs}
 }

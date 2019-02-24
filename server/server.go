@@ -8,6 +8,7 @@ import (
 	"net/rpc"
 	"path"
 	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -20,10 +21,11 @@ func probe(path string) (dirs, files []string) {
 
 	for _, i := range entries {
 		mode := i.Mode()
+		name := i.Name()
 		if mode.IsDir() {
-			dirs = append(dirs, i.Name())
-		} else if mode.IsRegular() {
-			files = append(files, i.Name())
+			dirs = append(dirs, name)
+		} else if mode.IsRegular() && strings.LastIndex(name, ".go") > 0 {
+			files = append(files, name)
 		}
 	}
 	return dirs, files
@@ -37,11 +39,24 @@ func (b *build) parseFiles(p string, files []string) {
 		f := tmp
 		go func() {
 			defer waitGroup.Done()
-			parsed := parseFile(path.Join(p, f))
-			b.fileChan <- *parsed
+			parsed, err := parseFile(path.Join(p, f))
+			if err == nil {
+				b.fileChan <- parsed
+			}
 		}()
 	}
 	waitGroup.Wait()
+}
+
+func (b *build) addToBuilder(p string) {
+	dirs, files := probe(p)
+
+	log.Printf("Analyzing %s", p)
+	b.parseFiles(p, files)
+
+	for _, dir := range dirs {
+		b.addToBuilder(path.Join(p, dir))
+	}
 }
 
 type packagesQuery struct {
@@ -72,27 +87,27 @@ type LocationsAnswer struct {
 }
 
 type build struct {
-	fileChan  chan file
-	indexChan chan index
+	fileChan  chan *file
+	indexChan chan *index
 }
 
 func (b *build) thread() {
 	builder := newBuilder()
 	for {
 		file := <-b.fileChan
-		builder.add(&file)
+		builder.add(file)
 		b.indexChan <- builder.build()
 	}
 }
 
 type search struct {
-	indexChan     chan index
-	packQueryChan chan packagesQuery
-	locQueryChan  chan locationsQuery
+	indexChan     chan *index
+	packQueryChan chan *packagesQuery
+	locQueryChan  chan *locationsQuery
 }
 
 func (s *search) thread() {
-	var currIndex index
+	var currIndex *index
 	for {
 		select {
 		case currIndex = <-s.indexChan:
@@ -110,7 +125,7 @@ func (s *search) FuncDefinition(
 	name *string, a *LocationsAnswer) error {
 
 	answerChan := make(chan *LocationsAnswer)
-	query := locationsQuery{name: *name, answerChan: answerChan}
+	query := &locationsQuery{name: *name, answerChan: answerChan}
 	s.locQueryChan <- query
 	*a = *<-answerChan
 
@@ -118,22 +133,31 @@ func (s *search) FuncDefinition(
 }
 
 func Run(port int) {
-	indexChan := make(chan index)
+	indexChan := make(chan *index)
 
 	search := search{
-		locQueryChan:  make(chan locationsQuery),
-		packQueryChan: make(chan packagesQuery),
+		locQueryChan:  make(chan *locationsQuery),
+		packQueryChan: make(chan *packagesQuery),
 		indexChan:     indexChan}
 	go search.thread()
 
 	build := build{
-		fileChan:  make(chan file),
+		fileChan:  make(chan *file),
 		indexChan: indexChan}
 	go build.thread()
 
-	path := "/usr/share/go/src/io"
-	_, files := probe(path)
-	build.parseFiles(path, files)
+	config := newConfig()
+	log.Printf("Server config: %+v", config)
+	if !config.valid() {
+		log.Fatalln("Invalid config")
+	}
+
+	/*
+		path := "/usr/share/go/src/io"
+		_, files := probe(path)
+		build.parseFiles(path, files)
+	*/
+	build.addToBuilder(config.goRoot)
 
 	log.Printf("Starting server on port %d", port)
 	err := rpc.RegisterName("Search", &search)

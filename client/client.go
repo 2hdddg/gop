@@ -21,6 +21,10 @@ func connectToServer(port int) (client *rpc.Client, err error) {
 	return client, err
 }
 
+func writeInGrepFormat(path, extract string, line int) {
+	fmt.Printf("%s:%d:Definition of %s\n", path, line, extract)
+}
+
 func Run(port int, def string) {
 	client, err := connectToServer(port)
 	if err != nil {
@@ -36,8 +40,7 @@ func Run(port int, def string) {
 
 		// Write to stdout in grep format
 		for _, l := range a.Locations {
-			fmt.Printf("%s:%d:Definition of %s\n",
-				l.FilePath, l.Line, def)
+			writeInGrepFormat(l.FilePath, def, l.Line)
 		}
 	}
 }
