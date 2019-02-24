@@ -1,8 +1,8 @@
 package server
 
 import (
-	"fmt"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
 	"net/rpc"
@@ -14,7 +14,7 @@ import (
 func probe(path string) (dirs, files []string) {
 	entries, err := ioutil.ReadDir(path)
 	if err != nil {
-		fmt.Printf("Error indexing package at %v: %v\n", path, err)
+		log.Printf("Error indexing package at %v: %v\n", path, err)
 		return nil, nil
 	}
 
@@ -135,12 +135,19 @@ func Run(port int) {
 	_, files := probe(path)
 	build.parseFiles(path, files)
 
-	rpc.RegisterName("Search", &search)
-	rpc.HandleHTTP()
-	l, e := net.Listen("tcp", ":"+strconv.Itoa(port))
-	if e != nil {
-		fmt.Println("Fatal", e)
-		return
+	log.Printf("Starting server on port %d", port)
+	err := rpc.RegisterName("Search", &search)
+	if err != nil {
+		log.Fatalf("Failed to register search service: %s", err)
 	}
-	http.Serve(l, nil)
+	rpc.HandleHTTP()
+	l, err := net.Listen("tcp", ":"+strconv.Itoa(port))
+	if err != nil {
+		log.Fatalf("Failed to listen on tcp port %d: %s",
+			port, err)
+	}
+	err = http.Serve(l, nil)
+	if err != nil {
+		log.Fatalf("Failed to start http server: %s", err)
+	}
 }

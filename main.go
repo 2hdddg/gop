@@ -2,10 +2,9 @@ package main
 
 import (
 	"flag"
-	"fmt"
+	"github.com/2hdddg/gop/client"
 	"github.com/2hdddg/gop/server"
-	"net/rpc"
-	"strconv"
+	"log"
 )
 
 var (
@@ -23,47 +22,21 @@ func setupParameters() {
 	flag.Parse()
 }
 
-func connectToServer(port int) (client *rpc.Client, err error) {
-	// Panics when server not running
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("Failed to connect to server: %s", r)
-		}
-	}()
-
-	client, err = rpc.DialHTTP("tcp", ":"+strconv.Itoa(port))
-
-	return client, err
-}
-
 func main() {
 	setupParameters()
+
+	// Configure standard logger
+	log.SetFlags(log.Ltime | log.Lshortfile)
 
 	if isServer {
 		server.Run(port)
 		return
 	}
 
-	client, err := connectToServer(port)
-	if err != nil {
-		fmt.Println("Fatal", err)
-		return
-	}
-
-	if definition != "" {
-		a := &server.LocationsAnswer{}
-		err = client.Call("Search.FuncDefinition", &definition, a)
-		if err != nil {
-			fmt.Println("Fatal", err)
-		}
-		// Write in grep format
-		for _, l := range a.Locations {
-			fmt.Printf("%s:%d:Definition of %s\n",
-				l.FilePath, l.Line, definition)
-		}
-	}
+	client.Run(port, definition)
 }
 
 /*
 :cgetexpr system("grep -n -r " . expand('<cword>') . " *")
+:cgetexpr system("./gop --def " . expand('<cword>')) | copen
 */
