@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/rpc"
 	"path"
+	"strconv"
 	"sync"
 )
 
@@ -136,7 +137,7 @@ func Run(port int) {
 
 	rpc.RegisterName("Search", &search)
 	rpc.HandleHTTP()
-	l, e := net.Listen("tcp", ":1234")
+	l, e := net.Listen("tcp", ":"+strconv.Itoa(port))
 	if e != nil {
 		fmt.Println("Fatal", e)
 		return

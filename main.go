@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/2hdddg/gop/server"
 	"net/rpc"
+	"strconv"
 )
 
 var (
@@ -39,7 +40,7 @@ func main() {
 			}
 		}()
 
-		client, err := rpc.DialHTTP("tcp", ":1234")
+		client, err := rpc.DialHTTP("tcp", ":"+strconv.Itoa(port))
 		if err != nil {
 			fmt.Println("Fatal", err)
 		}
