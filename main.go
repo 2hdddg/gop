@@ -56,7 +56,11 @@ func main() {
 		if err != nil {
 			fmt.Println("Fatal", err)
 		}
-		fmt.Println(a)
+		// Write in grep format
+		for _, l := range a.Locations {
+			fmt.Printf("%s:%d:Definition of %s\n",
+				l.FilePath, l.Line, definition)
+		}
 	}
 }
 
