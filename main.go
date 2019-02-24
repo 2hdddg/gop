@@ -23,6 +23,19 @@ func setupParameters() {
 	flag.Parse()
 }
 
+func connectToServer(port int) (client *rpc.Client, err error) {
+	// Panics when server not running
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("Failed to connect to server: %s", r)
+		}
+	}()
+
+	client, err = rpc.DialHTTP("tcp", ":"+strconv.Itoa(port))
+
+	return client, err
+}
+
 func main() {
 	setupParameters()
 
@@ -31,19 +44,13 @@ func main() {
 		return
 	}
 
-	/* Client */
-	if definition != "" {
-		// When server is not running
-		defer func() {
-			if r := recover(); r != nil {
-				fmt.Println("Failed to connect to server")
-			}
-		}()
+	client, err := connectToServer(port)
+	if err != nil {
+		fmt.Println("Fatal", err)
+		return
+	}
 
-		client, err := rpc.DialHTTP("tcp", ":"+strconv.Itoa(port))
-		if err != nil {
-			fmt.Println("Fatal", err)
-		}
+	if definition != "" {
 		a := &server.LocationsAnswer{}
 		err = client.Call("Search.FuncDefinition", &definition, a)
 		if err != nil {
