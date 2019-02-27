@@ -29,9 +29,18 @@ func (b *builder) add(f *file) {
 }
 
 func (b *builder) build() *index {
-	packs := make(map[string]pack)
+	packs := make(map[string]*pack)
+	funcs := make(map[string][]*pack)
+
 	for _, p := range b.packs {
-		packs[p.name] = *p
+		// Important to copy package since it will be sent
+		// to channel handling search while it might be modified
+		// by channel that indexes packages.
+		pp := *p
+		packs[p.name] = &pp
+		for n, _ := range pp.funcs {
+			funcs[n] = append(funcs[n], &pp)
+		}
 	}
-	return &index{packs: packs}
+	return &index{packs: packs, funcs: funcs}
 }

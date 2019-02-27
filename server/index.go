@@ -3,7 +3,8 @@ package server
 import ()
 
 type index struct {
-	packs map[string]pack
+	packs map[string]*pack
+	funcs map[string][]*pack
 }
 
 func (i *index) allPackages() *PackagesAnswer {
@@ -16,11 +17,21 @@ func (i *index) allPackages() *PackagesAnswer {
 
 func (i *index) funcDefinition(name string) *LocationsAnswer {
 	var locations []FileLocation
-	for _, p := range i.packs {
+
+	packs := i.funcs[name]
+	for _, p := range packs {
 		l := p.find(name)
 		if l != nil {
 			locations = append(locations, *l)
 		}
 	}
+	/*
+		for _, p := range i.packs {
+			l := p.find(name)
+			if l != nil {
+				locations = append(locations, *l)
+			}
+		}
+	*/
 	return &LocationsAnswer{Locations: locations}
 }

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/rpc"
 	"strconv"
+	"time"
 )
 
 type packagesQuery struct {
@@ -41,11 +42,27 @@ type build struct {
 }
 
 func (b *build) thread() {
+	count := 0
 	builder := newBuilder()
-	for {
-		file := <-b.fileChan
-		builder.add(file)
+	sendIndex := func() {
+		log.Printf("Building and sending new index")
 		b.indexChan <- builder.build()
+		count = 0
+	}
+
+	for {
+		select {
+		case <-time.After(2 * time.Second):
+			if count > 0 {
+				sendIndex()
+			}
+		case file := <-b.fileChan:
+			count += 1
+			builder.add(file)
+			if count > 100 {
+				sendIndex()
+			}
+		}
 	}
 }
 
