@@ -9,16 +9,23 @@ import (
 	"time"
 )
 
-type object int
+type Object int
 
 const (
-	Function object = 0
-	Package  object = 1
+	Function Object = 0
+	Package  Object = 1
 )
 
+type Query struct {
+	Object        Object
+	Name          string
+	Packages      []string
+	WorkspacePath string
+}
+
+// Internal query
 type query struct {
-	object     object
-	name       string
+	*Query
 	answerChan chan *Answer
 }
 
@@ -74,33 +81,20 @@ func (s *search) thread() {
 		case currIndex = <-s.indexChan:
 
 		case q := <-s.queryChan:
-			switch q.object {
+			switch q.Object {
 			case Function:
-				q.answerChan <- currIndex.funcByName(q.name)
+				q.answerChan <- currIndex.funcByName(q.Name)
 			case Package:
-				q.answerChan <- currIndex.packByName(q.name)
+				q.answerChan <- currIndex.packByName(q.Name)
 			}
 		}
 	}
 }
 
-func (s *search) invoke(q *query, a *Answer) {
-	q.answerChan = make(chan *Answer)
+func (s *search) Search(clientQuery *Query, answer *Answer) error {
+	q := &query{clientQuery, make(chan *Answer)}
 	s.queryChan <- q
-	*a = *<-q.answerChan
-}
-
-func (s *search) Func(name *string, a *Answer) error {
-	q := &query{object: Function, name: *name}
-	s.invoke(q, a)
-
-	return nil
-}
-
-func (s *search) Pack(name *string, a *Answer) error {
-	q := &query{object: Package, name: *name}
-	s.invoke(q, a)
-
+	*answer = *<-q.answerChan
 	return nil
 }
 

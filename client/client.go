@@ -11,6 +11,7 @@ import (
 type Query struct {
 	FuncFilter string
 	PackFilter string
+	GoFilePath string
 }
 
 func connectToServer(port int) (client *rpc.Client, err error) {
@@ -30,16 +31,17 @@ func writeInGrepFormat(path, what, filter string, line int) {
 	fmt.Printf("%s:%d:%s matching '%s'\n", path, line, what, filter)
 }
 
-func invoke(client *rpc.Client, filter, object string) {
-	a := &server.Answer{}
-	err := client.Call("Search."+object, &filter, a)
+func invoke(client *rpc.Client, filter string, object server.Object) {
+	answer := &server.Answer{}
+	query := &server.Query{Object: object, Name: filter}
+	err := client.Call("Search.Search", query, answer)
 	if err != nil {
 		log.Fatalf("Failed to call server: %s", err)
 	}
 
 	// Write to stdout in grep format
-	for _, l := range a.Locations {
-		writeInGrepFormat(l.Path, object, filter, l.Line)
+	for _, l := range answer.Locations {
+		writeInGrepFormat(l.Path, "object", filter, l.Line)
 	}
 }
 
@@ -50,10 +52,10 @@ func Run(port int, query *Query) {
 	}
 
 	if query.FuncFilter != "" {
-		invoke(client, query.FuncFilter, "Func")
+		invoke(client, query.FuncFilter, server.Function)
 	}
 
 	if query.PackFilter != "" {
-		invoke(client, query.PackFilter, "Pack")
+		invoke(client, query.PackFilter, server.Package)
 	}
 }
