@@ -1,15 +1,19 @@
 package server
 
 import (
-	"fmt"
+	"log"
 )
 
+// Keeps track of exported functions in package.
+// Each function has a file and location in the file.
 type pack struct {
 	name  string
 	funcs map[string]FileLocation
 }
 
-func (p *pack) merge(f *file) {
+// Merges functions in parsed file to the list of files in
+// the package. Handles case where file has been merged before.
+func (p *pack) mergeFile(f *file) {
 	// Simple but expensive merge by removing all locations
 	// for the file and adding all symbols in the file again.
 	for name, loc := range p.funcs {
@@ -22,8 +26,8 @@ func (p *pack) merge(f *file) {
 	}
 }
 
-func (p *pack) find(name string) *FileLocation {
-	fmt.Printf("Looking for %v\n", name)
+func (p *pack) findFunc(name string) *FileLocation {
+	log.Printf("Looking for %v\n", name)
 	l, ok := p.funcs[name]
 	if ok {
 		return &l
@@ -31,7 +35,7 @@ func (p *pack) find(name string) *FileLocation {
 	return nil
 }
 
-func newPackage(path, name string) *pack {
+func newPackage(name string) *pack {
 	funcs := make(map[string]FileLocation)
 	return &pack{name: name, funcs: funcs}
 }

@@ -20,18 +20,10 @@ func (i *index) funcDefinition(name string) *LocationsAnswer {
 
 	packs := i.funcs[name]
 	for _, p := range packs {
-		l := p.find(name)
+		l := p.findFunc(name)
 		if l != nil {
 			locations = append(locations, *l)
 		}
 	}
-	/*
-		for _, p := range i.packs {
-			l := p.find(name)
-			if l != nil {
-				locations = append(locations, *l)
-			}
-		}
-	*/
 	return &LocationsAnswer{Locations: locations}
 }

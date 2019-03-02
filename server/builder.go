@@ -16,7 +16,7 @@ func (b *builder) ensurePackage(f *file) *pack {
 
 	p, exists := b.packs[key]
 	if !exists {
-		p = newPackage(path, name)
+		p = newPackage(path)
 		b.packs[key] = p
 	}
 
@@ -25,7 +25,7 @@ func (b *builder) ensurePackage(f *file) *pack {
 
 func (b *builder) add(f *file) {
 	p := b.ensurePackage(f)
-	p.merge(f)
+	p.mergeFile(f)
 }
 
 func (b *builder) build() *index {
@@ -36,10 +36,10 @@ func (b *builder) build() *index {
 		// Important to copy package since it will be sent
 		// to channel handling search while it might be modified
 		// by channel that indexes packages.
-		pp := *p
-		packs[p.name] = &pp
-		for n, _ := range pp.funcs {
-			funcs[n] = append(funcs[n], &pp)
+		pcopy := *p
+		packs[p.name] = &pcopy
+		for n, _ := range pcopy.funcs {
+			funcs[n] = append(funcs[n], &pcopy)
 		}
 	}
 	return &index{packs: packs, funcs: funcs}
