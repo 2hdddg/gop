@@ -7,15 +7,17 @@ type index struct {
 	funcs map[string][]*pack
 }
 
-func (i *index) allPackages() *PackagesAnswer {
-	var packs []string
-	for _, p := range i.packs {
-		packs = append(packs, p.name)
+func (i *index) packByName(name string) *Answer {
+	var locations []FileLocation
+
+	p := i.packs[name]
+	if p != nil {
+		locations = append(locations, FileLocation{FilePath: name})
 	}
-	return &PackagesAnswer{Packages: packs}
+	return &Answer{Locations: locations}
 }
 
-func (i *index) funcDefinition(name string) *LocationsAnswer {
+func (i *index) funcByName(name string) *Answer {
 	var locations []FileLocation
 
 	packs := i.funcs[name]
@@ -25,5 +27,5 @@ func (i *index) funcDefinition(name string) *LocationsAnswer {
 			locations = append(locations, *l)
 		}
 	}
-	return &LocationsAnswer{Locations: locations}
+	return &Answer{Locations: locations}
 }

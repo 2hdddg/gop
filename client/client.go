@@ -8,6 +8,11 @@ import (
 	"strconv"
 )
 
+type Query struct {
+	FuncFilter string
+	PackFilter string
+}
+
 func connectToServer(port int) (client *rpc.Client, err error) {
 	// Panics when server not running
 	defer func() {
@@ -21,26 +26,39 @@ func connectToServer(port int) (client *rpc.Client, err error) {
 	return client, err
 }
 
-func writeInGrepFormat(path, extract string, line int) {
-	fmt.Printf("%s:%d:Definition of %s\n", path, line, extract)
+func writeInGrepFormat(path, what, filter string, line int) {
+	fmt.Printf("%s:%d:%s matching '%s'\n", path, line, what, filter)
 }
 
-func Run(port int, def string) {
+func Run(port int, query *Query) {
 	client, err := connectToServer(port)
 	if err != nil {
 		log.Fatalf("Failed to connect to server: %s", err)
 	}
 
-	if def != "" {
-		a := &server.LocationsAnswer{}
-		err = client.Call("Search.FuncDefinition", &def, a)
+	if query.FuncFilter != "" {
+		a := &server.Answer{}
+		err = client.Call("Search.Func", &query.FuncFilter, a)
 		if err != nil {
 			log.Fatalf("Failed to call server: %s", err)
 		}
 
 		// Write to stdout in grep format
 		for _, l := range a.Locations {
-			writeInGrepFormat(l.FilePath, def, l.Line)
+			writeInGrepFormat(l.FilePath, "Func", query.FuncFilter, l.Line)
+		}
+	}
+
+	if query.PackFilter != "" {
+		a := &server.Answer{}
+		err = client.Call("Search.Pack", &query.PackFilter, a)
+		if err != nil {
+			log.Fatalf("Failed to call server: %s", err)
+		}
+
+		// Write to stdout in grep format
+		for _, l := range a.Locations {
+			writeInGrepFormat(l.FilePath, "Pack", query.PackFilter, l.Line)
 		}
 	}
 }

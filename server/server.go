@@ -9,17 +9,17 @@ import (
 	"time"
 )
 
-type packagesQuery struct {
-	answerChan chan *PackagesAnswer
-}
+type object int
 
-type locationsQuery struct {
+const (
+	Function object = 0
+	Package  object = 1
+)
+
+type query struct {
+	object     object
 	name       string
-	answerChan chan *LocationsAnswer
-}
-
-type PackagesAnswer struct {
-	Packages []string
+	answerChan chan *Answer
 }
 
 type Location struct {
@@ -32,7 +32,7 @@ type FileLocation struct {
 	FilePath string
 }
 
-type LocationsAnswer struct {
+type Answer struct {
 	Locations []FileLocation
 }
 
@@ -67,9 +67,8 @@ func (b *build) thread() {
 }
 
 type search struct {
-	indexChan     chan *index
-	packQueryChan chan *packagesQuery
-	locQueryChan  chan *locationsQuery
+	indexChan chan *index
+	queryChan chan *query
 }
 
 func (s *search) thread() {
@@ -78,21 +77,34 @@ func (s *search) thread() {
 		select {
 		case currIndex = <-s.indexChan:
 
-		case q := <-s.packQueryChan:
-			q.answerChan <- currIndex.allPackages()
-
-		case q := <-s.locQueryChan:
-			q.answerChan <- currIndex.funcDefinition(q.name)
+		case q := <-s.queryChan:
+			switch q.object {
+			case Function:
+				q.answerChan <- currIndex.funcByName(q.name)
+			case Package:
+				q.answerChan <- currIndex.packByName(q.name)
+			}
 		}
 	}
 }
 
-func (s *search) FuncDefinition(
-	name *string, a *LocationsAnswer) error {
+func (s *search) Func(name *string, a *Answer) error {
 
-	answerChan := make(chan *LocationsAnswer)
-	query := &locationsQuery{name: *name, answerChan: answerChan}
-	s.locQueryChan <- query
+	answerChan := make(chan *Answer)
+	query := &query{
+		object: Function, name: *name, answerChan: answerChan}
+	s.queryChan <- query
+	*a = *<-answerChan
+
+	return nil
+}
+
+func (s *search) Pack(name *string, a *Answer) error {
+
+	answerChan := make(chan *Answer)
+	query := &query{
+		object: Package, name: *name, answerChan: answerChan}
+	s.queryChan <- query
 	*a = *<-answerChan
 
 	return nil
@@ -102,9 +114,8 @@ func Run(port int) {
 	indexChan := make(chan *index)
 
 	search := search{
-		locQueryChan:  make(chan *locationsQuery),
-		packQueryChan: make(chan *packagesQuery),
-		indexChan:     indexChan}
+		queryChan: make(chan *query),
+		indexChan: indexChan}
 	go search.thread()
 
 	build := build{
