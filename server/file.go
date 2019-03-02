@@ -10,10 +10,12 @@ import (
 	"unicode/utf8"
 )
 
+type line int
+
 type file struct {
 	path     string
 	packName string
-	funcs    map[string]Location
+	funcs    map[string]line
 }
 
 func (f *file) packPath() string {
@@ -25,9 +27,8 @@ func isExported(name string) bool {
 	return unicode.IsUpper(r)
 }
 
-func parseFunc(fset *token.FileSet, o *ast.Object) Location {
-	position := fset.Position(o.Pos())
-	return Location{Line: position.Line, Column: position.Column}
+func parseFunc(fset *token.FileSet, o *ast.Object) line {
+	return line(fset.Position(o.Pos()).Line)
 }
 
 func parseFile(path string) (*file, error) {
@@ -38,7 +39,7 @@ func parseFile(path string) (*file, error) {
 	}
 
 	packageName := f.Name.Name
-	funcs := make(map[string]Location)
+	funcs := make(map[string]line)
 	for _, o := range f.Scope.Objects {
 		if !isExported(o.Name) {
 			continue

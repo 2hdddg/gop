@@ -23,17 +23,13 @@ type query struct {
 }
 
 type Location struct {
+	Path   string
 	Line   int
 	Column int
 }
 
-type FileLocation struct {
-	Location
-	FilePath string
-}
-
 type Answer struct {
-	Locations []FileLocation
+	Locations []Location
 }
 
 type build struct {

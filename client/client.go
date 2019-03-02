@@ -45,7 +45,7 @@ func Run(port int, query *Query) {
 
 		// Write to stdout in grep format
 		for _, l := range a.Locations {
-			writeInGrepFormat(l.FilePath, "Func", query.FuncFilter, l.Line)
+			writeInGrepFormat(l.Path, "Func", query.FuncFilter, l.Line)
 		}
 	}
 
@@ -58,7 +58,7 @@ func Run(port int, query *Query) {
 
 		// Write to stdout in grep format
 		for _, l := range a.Locations {
-			writeInGrepFormat(l.FilePath, "Pack", query.PackFilter, l.Line)
+			writeInGrepFormat(l.Path, "Pack", query.PackFilter, l.Line)
 		}
 	}
 }

@@ -8,17 +8,17 @@ type index struct {
 }
 
 func (i *index) packByName(name string) *Answer {
-	var locations []FileLocation
+	var locations []Location
 
 	p := i.packs[name]
 	if p != nil {
-		locations = append(locations, FileLocation{FilePath: name})
+		locations = append(locations, Location{Path: name})
 	}
 	return &Answer{Locations: locations}
 }
 
 func (i *index) funcByName(name string) *Answer {
-	var locations []FileLocation
+	var locations []Location
 
 	packs := i.funcs[name]
 	for _, p := range packs {
