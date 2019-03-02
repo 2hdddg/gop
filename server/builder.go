@@ -16,7 +16,7 @@ func (b *builder) ensurePackage(f *file) *pack {
 
 	p, exists := b.packs[key]
 	if !exists {
-		p = newPackage(path)
+		p = newPackage(name, path)
 		b.packs[key] = p
 	}
 

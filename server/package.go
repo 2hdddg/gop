@@ -8,6 +8,7 @@ import (
 // Each function has a file and location in the file.
 type pack struct {
 	name  string
+	path  string
 	funcs map[string]Location
 }
 
@@ -35,7 +36,7 @@ func (p *pack) findFunc(name string) *Location {
 	return nil
 }
 
-func newPackage(name string) *pack {
+func newPackage(name, path string) *pack {
 	funcs := make(map[string]Location)
-	return &pack{name: name, funcs: funcs}
+	return &pack{name: name, path: path, funcs: funcs}
 }

@@ -84,24 +84,22 @@ func (s *search) thread() {
 	}
 }
 
-func (s *search) Func(name *string, a *Answer) error {
+func (s *search) invoke(q *query, a *Answer) {
+	q.answerChan = make(chan *Answer)
+	s.queryChan <- q
+	*a = *<-q.answerChan
+}
 
-	answerChan := make(chan *Answer)
-	query := &query{
-		object: Function, name: *name, answerChan: answerChan}
-	s.queryChan <- query
-	*a = *<-answerChan
+func (s *search) Func(name *string, a *Answer) error {
+	q := &query{object: Function, name: *name}
+	s.invoke(q, a)
 
 	return nil
 }
 
 func (s *search) Pack(name *string, a *Answer) error {
-
-	answerChan := make(chan *Answer)
-	query := &query{
-		object: Package, name: *name, answerChan: answerChan}
-	s.queryChan <- query
-	*a = *<-answerChan
+	q := &query{object: Package, name: *name}
+	s.invoke(q, a)
 
 	return nil
 }

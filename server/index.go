@@ -12,7 +12,7 @@ func (i *index) packByName(name string) *Answer {
 
 	p := i.packs[name]
 	if p != nil {
-		locations = append(locations, Location{Path: name})
+		locations = append(locations, Location{Path: p.path})
 	}
 	return &Answer{Locations: locations}
 }

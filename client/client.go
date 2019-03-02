@@ -30,6 +30,19 @@ func writeInGrepFormat(path, what, filter string, line int) {
 	fmt.Printf("%s:%d:%s matching '%s'\n", path, line, what, filter)
 }
 
+func invoke(client *rpc.Client, filter, object string) {
+	a := &server.Answer{}
+	err := client.Call("Search."+object, &filter, a)
+	if err != nil {
+		log.Fatalf("Failed to call server: %s", err)
+	}
+
+	// Write to stdout in grep format
+	for _, l := range a.Locations {
+		writeInGrepFormat(l.Path, object, filter, l.Line)
+	}
+}
+
 func Run(port int, query *Query) {
 	client, err := connectToServer(port)
 	if err != nil {
@@ -37,28 +50,10 @@ func Run(port int, query *Query) {
 	}
 
 	if query.FuncFilter != "" {
-		a := &server.Answer{}
-		err = client.Call("Search.Func", &query.FuncFilter, a)
-		if err != nil {
-			log.Fatalf("Failed to call server: %s", err)
-		}
-
-		// Write to stdout in grep format
-		for _, l := range a.Locations {
-			writeInGrepFormat(l.Path, "Func", query.FuncFilter, l.Line)
-		}
+		invoke(client, query.FuncFilter, "Func")
 	}
 
 	if query.PackFilter != "" {
-		a := &server.Answer{}
-		err = client.Call("Search.Pack", &query.PackFilter, a)
-		if err != nil {
-			log.Fatalf("Failed to call server: %s", err)
-		}
-
-		// Write to stdout in grep format
-		for _, l := range a.Locations {
-			writeInGrepFormat(l.Path, "Pack", query.PackFilter, l.Line)
-		}
+		invoke(client, query.PackFilter, "Pack")
 	}
 }
