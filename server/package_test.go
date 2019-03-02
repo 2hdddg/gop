@@ -2,13 +2,13 @@ package server
 
 import "testing"
 
-func TestFindFunc(t *testing.T) {
-	p := newPackage("p1")
-	p.funcs["f1"] = FileLocation{FilePath: "f1path"}
+func TestFindFuncInPack(t *testing.T) {
+	p := newPackage("p1", "x/p1")
+	p.funcs["f1"] = Location{Path: "f1path"}
 
 	// Existing
 	found := p.findFunc("f1")
-	if found.FilePath != "f1path" {
+	if found.Path != "f1path" {
 		t.Error("Should have found f1")
 	}
 
@@ -19,11 +19,11 @@ func TestFindFunc(t *testing.T) {
 	}
 }
 
-func TestMerge(t *testing.T) {
-	p := newPackage("pack1")
+func TestMergePack(t *testing.T) {
+	p := newPackage("pack1", "x/pack1")
 	f := file{path: "file1", packName: "pack1",
-		funcs: make(map[string]Location)}
-	f.funcs["func1"] = Location{}
+		funcs: make(map[string]line)}
+	f.funcs["func1"] = 1
 
 	// Merge to package containing no functions
 	p.mergeFile(&f)
@@ -39,14 +39,14 @@ func TestMerge(t *testing.T) {
 
 	// Same file but different function, should remove previous
 	delete(f.funcs, "func1")
-	f.funcs["func2"] = Location{Line: 10}
+	f.funcs["func2"] = 10
 	p.mergeFile(&f)
 	if p.findFunc("func1") != nil {
 		t.Error("Shouldn't find func1")
 	}
 
 	// Same file but different location, should update location
-	f.funcs["func2"] = Location{Line: 20}
+	f.funcs["func2"] = 20
 	p.mergeFile(&f)
 	if p.findFunc("func2").Line != 20 {
 		t.Error("Should update line")
@@ -54,8 +54,8 @@ func TestMerge(t *testing.T) {
 
 	// Another file with another func, all funcs should exist
 	f = file{path: "file2", packName: "pack1",
-		funcs: make(map[string]Location)}
-	f.funcs["func3"] = Location{}
+		funcs: make(map[string]line)}
+	f.funcs["func3"] = 7
 	p.mergeFile(&f)
 	if p.findFunc("func2") == nil || p.findFunc("func3") == nil {
 		t.Error("Should find funcs")
