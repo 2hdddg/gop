@@ -89,6 +89,7 @@ func parseFiles(fileChan chan *file, p string, files []string) {
 	}
 	waitGroup.Wait()
 }
+
 func buildDir(f chan *file, p string) {
 	log.Printf("Analyzing package at %s", p)
 
