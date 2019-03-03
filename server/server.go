@@ -46,10 +46,10 @@ type build struct {
 
 func (b *build) thread() {
 	count := 0
-	builder := newBuilder()
+	packs := newPacks()
 	sendIndex := func() {
 		log.Printf("Building and sending new index")
-		b.indexChan <- builder.build()
+		b.indexChan <- packs.buildIndex()
 		count = 0
 	}
 
@@ -61,7 +61,7 @@ func (b *build) thread() {
 			}
 		case file := <-b.fileChan:
 			count += 1
-			builder.add(file)
+			packs.addFile(file)
 			if count > 100 {
 				sendIndex()
 			}
