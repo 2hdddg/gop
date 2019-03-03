@@ -3,12 +3,13 @@ package client
 import (
 	"fmt"
 	"github.com/2hdddg/gop/server"
+	"github.com/2hdddg/gop/shared"
 	"log"
 	"net/rpc"
 	"strconv"
 )
 
-type Query struct {
+type Params struct {
 	FuncFilter string
 	PackFilter string
 	GoFilePath string
@@ -45,17 +46,20 @@ func invoke(client *rpc.Client, filter string, object server.Object) {
 	}
 }
 
-func Run(port int, query *Query) {
+func Run(port int, params *Params) {
+	config := shared.NewConfig()
+	log.Printf("Client config: %+v", config)
+
 	client, err := connectToServer(port)
 	if err != nil {
 		log.Fatalf("Failed to connect to server: %s", err)
 	}
 
-	if query.FuncFilter != "" {
-		invoke(client, query.FuncFilter, server.Function)
+	if params.FuncFilter != "" {
+		invoke(client, params.FuncFilter, server.Function)
 	}
 
-	if query.PackFilter != "" {
-		invoke(client, query.PackFilter, server.Package)
+	if params.PackFilter != "" {
+		invoke(client, params.PackFilter, server.Package)
 	}
 }

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/2hdddg/gop/shared"
 	"io/ioutil"
 	"log"
 	"path"
@@ -14,8 +15,8 @@ type monitor struct {
 	workspacePath string
 }
 
-func newMonitor(config *config, fileChan chan *file) *monitor {
-	return &monitor{fileChan: fileChan, systemPath: config.system.path}
+func newMonitor(config *shared.Config, fileChan chan *file) *monitor {
+	return &monitor{fileChan: fileChan, systemPath: config.SystemPath}
 }
 
 func (m *monitor) _parseFiles(p string, files []string) {

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/2hdddg/gop/shared"
 	"log"
 	"net"
 	"net/http"
@@ -17,10 +18,10 @@ const (
 )
 
 type Query struct {
-	Object        Object
-	Name          string
-	Packages      []string
-	WorkspacePath string
+	Object   Object
+	Name     string
+	Packages []string
+	Config   *shared.Config
 }
 
 // Internal query
@@ -111,9 +112,9 @@ func Run(port int) {
 		indexChan: indexChan}
 	go build.thread()
 
-	config := newConfig()
+	config := shared.NewConfig()
 	log.Printf("Server config: %+v", config)
-	if !config.valid() {
+	if !config.Valid() {
 		log.Fatalln("Invalid config")
 	}
 

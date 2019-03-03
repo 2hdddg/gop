@@ -10,16 +10,16 @@ import (
 var (
 	isServer bool
 	port     int
-	query    client.Query
+	params   client.Params
 )
 
 func setupParameters() {
 	flag.BoolVar(&isServer, "serve", false, "Run server")
 	flag.IntVar(&port, "port", 8080, "Server port")
 
-	flag.StringVar(&query.FuncFilter, "func", "", "Find function")
-	flag.StringVar(&query.PackFilter, "pack", "", "Find package")
-	flag.StringVar(&query.GoFilePath, "file", "", "Go file")
+	flag.StringVar(&params.FuncFilter, "func", "", "Find function")
+	flag.StringVar(&params.PackFilter, "pack", "", "Find package")
+	flag.StringVar(&params.GoFilePath, "file", "", "Go file")
 
 	flag.Parse()
 }
@@ -35,7 +35,7 @@ func main() {
 		return
 	}
 
-	client.Run(port, &query)
+	client.Run(port, &params)
 }
 
 /*
