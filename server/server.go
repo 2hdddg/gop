@@ -117,10 +117,8 @@ func Run(port int) {
 		log.Fatalln("Invalid config")
 	}
 
-	// In go thread to be responsive to client requests, could
-	// of course cause in-complete answers but better than hanging
-	// or failing.
-	go config.system.build(build.fileChan)
+	monitor := newMonitor(config, build.fileChan)
+	monitor.start()
 
 	log.Printf("Starting server on port %d", port)
 	err := rpc.RegisterName("Search", &search)
