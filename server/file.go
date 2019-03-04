@@ -6,8 +6,6 @@ import (
 	"go/parser"
 	"go/token"
 	"path"
-	"unicode"
-	"unicode/utf8"
 )
 
 type line int
@@ -22,11 +20,6 @@ func (f *file) packPath() string {
 	return path.Dir(f.path)
 }
 
-func isExported(name string) bool {
-	r, _ := utf8.DecodeRuneInString(name)
-	return unicode.IsUpper(r)
-}
-
 func parseFunc(fset *token.FileSet, o *ast.Object) line {
 	return line(fset.Position(o.Pos()).Line)
 }
@@ -37,13 +30,11 @@ func parseFile(path string) (*file, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error while parsing %v: %v\n", path, err)
 	}
-
 	packageName := f.Name.Name
+
+	ast.FileExports(f)
 	funcs := make(map[string]line)
 	for _, o := range f.Scope.Objects {
-		if !isExported(o.Name) {
-			continue
-		}
 		if o.Kind == ast.Fun {
 			funcs[o.Name] = parseFunc(fset, o)
 		}

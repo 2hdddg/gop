@@ -19,7 +19,7 @@ func setupParameters() {
 
 	flag.StringVar(&params.FuncFilter, "func", "", "Find function")
 	flag.StringVar(&params.PackFilter, "pack", "", "Find package")
-	flag.StringVar(&params.GoFilePath, "file", "", "Go file")
+	flag.StringVar(&params.FilePath, "file", "", "Go file")
 
 	flag.Parse()
 }

@@ -12,7 +12,7 @@ import (
 type Params struct {
 	FuncFilter string
 	PackFilter string
-	GoFilePath string
+	FilePath   string
 }
 
 func connectToServer(port int) (client *rpc.Client, err error) {
@@ -32,9 +32,8 @@ func writeInGrepFormat(path, what, filter string, line int) {
 	fmt.Printf("%s:%d:%s matching '%s'\n", path, line, what, filter)
 }
 
-func invoke(client *rpc.Client, filter string, object server.Object) {
+func invoke(client *rpc.Client, query *server.Query) {
 	answer := &server.Answer{}
-	query := &server.Query{Object: object, Name: filter}
 	err := client.Call("Search.Search", query, answer)
 	if err != nil {
 		log.Fatalf("Failed to call server: %s", err)
@@ -42,7 +41,7 @@ func invoke(client *rpc.Client, filter string, object server.Object) {
 
 	// Write to stdout in grep format
 	for _, l := range answer.Locations {
-		writeInGrepFormat(l.Path, "object", filter, l.Line)
+		writeInGrepFormat(l.Path, "object", query.Name, l.Line)
 	}
 }
 
@@ -55,11 +54,20 @@ func Run(port int, params *Params) {
 		log.Fatalf("Failed to connect to server: %s", err)
 	}
 
+	query := &server.Query{}
+
 	if params.FuncFilter != "" {
-		invoke(client, params.FuncFilter, server.Function)
+		query.Object = server.Function
+		query.Name = params.FuncFilter
+		if params.FilePath != "" {
+			query.Packages, _ = parseFileImports(params.FilePath)
+		}
+		invoke(client, query)
 	}
 
 	if params.PackFilter != "" {
-		invoke(client, params.PackFilter, server.Package)
+		query.Object = server.Package
+		query.Name = params.PackFilter
+		invoke(client, query)
 	}
 }

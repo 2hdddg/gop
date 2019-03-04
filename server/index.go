@@ -17,14 +17,28 @@ func (i *index) packByName(name string) *Answer {
 	return &Answer{Locations: locations}
 }
 
-func (i *index) funcByName(name string) *Answer {
+func (i *index) funcByQuery(query *Query) *Answer {
 	var locations []Location
+	checkImported := len(query.Packages) > 0
 
-	packs := i.funcs[name]
-	for _, p := range packs {
-		l := p.findFunc(name)
-		if l != nil {
-			locations = append(locations, *l)
+	packs := i.funcs[query.Name]
+	for _, hit := range packs {
+		found := hit
+		if checkImported {
+			found = nil
+			for _, imported := range query.Packages {
+				if hit.name == imported {
+					found = hit
+					break
+				}
+			}
+		}
+
+		if found != nil {
+			l := found.findFunc(query.Name)
+			if l != nil {
+				locations = append(locations, *l)
+			}
 		}
 	}
 	return &Answer{Locations: locations}

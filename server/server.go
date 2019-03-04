@@ -84,7 +84,7 @@ func (s *search) thread() {
 		case q := <-s.queryChan:
 			switch q.Object {
 			case Function:
-				q.answerChan <- currIndex.funcByName(q.Name)
+				q.answerChan <- currIndex.funcByQuery(q.Query)
 			case Package:
 				q.answerChan <- currIndex.packByName(q.Name)
 			}
