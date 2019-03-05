@@ -19,7 +19,7 @@ func newMonitor(config *shared.Config, fileChan chan *file) *monitor {
 	return &monitor{fileChan: fileChan, systemPath: config.SystemPath}
 }
 
-func (m *monitor) _parseFiles(p string, files []string) {
+func (m *monitor) _parseFiles(root, p string, files []string) {
 	var waitGroup sync.WaitGroup
 
 	for _, tmp := range files {
@@ -27,7 +27,7 @@ func (m *monitor) _parseFiles(p string, files []string) {
 		f := tmp
 		go func() {
 			defer waitGroup.Done()
-			parsed, err := parseFile(path.Join(p, f))
+			parsed, err := parseFile(p, path.Join(root, p, f))
 			if err == nil {
 				m.fileChan <- parsed
 			}
@@ -55,19 +55,20 @@ func _probe(path string) (dirs, files []string) {
 	return dirs, files
 }
 
-func (m *monitor) _analyzePackage(p string) {
-	log.Printf("Analyzing package at %s", p)
+func (m *monitor) _analyzePackage(root, packPath string) {
+	fullPath := path.Join(root, packPath)
+	log.Printf("Analyzing package at %s", fullPath)
 
-	dirs, files := _probe(p)
-	m._parseFiles(p, files)
+	dirs, files := _probe(fullPath)
+	m._parseFiles(root, packPath, files)
 
 	for _, dir := range dirs {
-		m._analyzePackage(path.Join(p, dir))
+		m._analyzePackage(root, path.Join(packPath, dir))
 	}
 }
 
 func (m *monitor) _analyzeRoots() {
-	m._analyzePackage(m.systemPath)
+	m._analyzePackage(m.systemPath, "")
 }
 
 // Should not block too long

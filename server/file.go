@@ -24,13 +24,13 @@ func parseFunc(fset *token.FileSet, o *ast.Object) line {
 	return line(fset.Position(o.Pos()).Line)
 }
 
-func parseFile(path string) (*file, error) {
+func parseFile(packName, path string) (*file, error) {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, path, nil, 0)
 	if err != nil {
 		return nil, fmt.Errorf("Error while parsing %v: %v\n", path, err)
 	}
-	packageName := f.Name.Name
+	packageName := packName
 
 	ast.FileExports(f)
 	funcs := make(map[string]line)

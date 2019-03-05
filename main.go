@@ -39,6 +39,5 @@ func main() {
 }
 
 /*
-:cgetexpr system("grep -n -r " . expand('<cword>') . " *")
-:cgetexpr system("./gop --def " . expand('<cword>')) | copen
+:lgetexpr system("~/code/go_parser/gop --func " . expand('<cword>') . " --file " . expand('%:p')) | lopen
 */
