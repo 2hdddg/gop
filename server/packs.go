@@ -1,13 +1,10 @@
 package server
 
-/*
-type builder struct {
-	packs map[string]*pack
-}
-*/
+import (
+	"path"
+)
 
 // Set of packs used to build an index.
-
 type packs map[string]*pack
 
 func newPacks() packs {
@@ -16,15 +13,14 @@ func newPacks() packs {
 
 // Ensures that package referenced by parsed file exists in
 // the set of packs.
-func (s *packs) ensurePackage(f *file) *pack {
-	path := f.packPath()
-	name := f.packName
-	key := path + name
+func (packs *packs) ensurePackage(f *file) *pack {
+	packPath := path.Dir(f.filePath)
+	key := path.Join(packPath, f.packName)
 
-	p, exists := (*s)[key]
+	p, exists := (*packs)[key]
 	if !exists {
-		p = newPackage(name, path)
-		(*s)[key] = p
+		p = newPackage(f.packName, packPath)
+		(*packs)[key] = p
 	}
 
 	return p
@@ -46,7 +42,7 @@ func (s *packs) buildIndex() *index {
 		// to channel handling search while it might be modified
 		// by channel that indexes packages.
 		pcopy := *p
-		packs[p.name] = &pcopy
+		packs[p.packName] = &pcopy
 		for n, _ := range pcopy.funcs {
 			funcs[n] = append(funcs[n], &pcopy)
 		}

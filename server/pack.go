@@ -7,9 +7,9 @@ import (
 // Keeps track of exported functions in package.
 // Each function has a file and location in the file.
 type pack struct {
-	name  string
-	path  string
-	funcs map[string]Location
+	packPath string              // Full path to package
+	packName string              // Qualified name: go/ast
+	funcs    map[string]Location // Functions names lookup
 }
 
 // Merges functions in parsed file to the list of files in
@@ -17,13 +17,15 @@ type pack struct {
 func (p *pack) mergeFile(f *file) {
 	// Simple but expensive merge by removing all locations
 	// for the file and adding all symbols in the file again.
-	for name, loc := range p.funcs {
-		if loc.Path == f.path {
-			delete(p.funcs, name)
+	for funcName, location := range p.funcs {
+		if location.Path == f.filePath {
+			delete(p.funcs, funcName)
 		}
 	}
-	for name, line := range f.funcs {
-		p.funcs[name] = Location{Path: f.path, Line: int(line)}
+	for funcName, line := range f.funcs {
+		p.funcs[funcName] = Location{
+			Path: f.filePath,
+			Line: int(line)}
 	}
 }
 
@@ -38,5 +40,5 @@ func (p *pack) findFunc(name string) *Location {
 
 func newPackage(name, path string) *pack {
 	funcs := make(map[string]Location)
-	return &pack{name: name, path: path, funcs: funcs}
+	return &pack{packName: name, packPath: path, funcs: funcs}
 }

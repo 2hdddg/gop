@@ -19,7 +19,7 @@ func newMonitor(config *shared.Config, fileChan chan *file) *monitor {
 	return &monitor{fileChan: fileChan, systemPath: config.SystemPath}
 }
 
-func (m *monitor) _parseFiles(root, p string, files []string) {
+func (m *monitor) _parseFiles(root, packPath string, files []string) {
 	var waitGroup sync.WaitGroup
 
 	for _, tmp := range files {
@@ -27,7 +27,8 @@ func (m *monitor) _parseFiles(root, p string, files []string) {
 		f := tmp
 		go func() {
 			defer waitGroup.Done()
-			parsed, err := parseFile(p, path.Join(root, p, f))
+			fullPath := path.Join(root, packPath, f)
+			parsed, err := parseFile(packPath, fullPath)
 			if err == nil {
 				m.fileChan <- parsed
 			}

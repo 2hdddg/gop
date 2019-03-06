@@ -12,7 +12,7 @@ func (i *index) packByName(name string) *Answer {
 
 	p := i.packs[name]
 	if p != nil {
-		locations = append(locations, Location{Path: p.path})
+		locations = append(locations, Location{Path: p.packPath})
 	}
 	return &Answer{Locations: locations}
 }
@@ -27,7 +27,7 @@ func (i *index) funcByQuery(query *Query) *Answer {
 		if checkImported {
 			found = nil
 			for _, imported := range query.Packages {
-				if hit.name == imported {
+				if hit.packName == imported {
 					found = hit
 					break
 				}

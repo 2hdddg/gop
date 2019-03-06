@@ -3,7 +3,7 @@ package client
 import (
 	"fmt"
 	"github.com/2hdddg/gop/server"
-	"github.com/2hdddg/gop/shared"
+	//"github.com/2hdddg/gop/shared"
 	"log"
 	"net/rpc"
 	"strconv"
@@ -46,8 +46,7 @@ func invoke(client *rpc.Client, query *server.Query) {
 }
 
 func Run(port int, params *Params) {
-	config := shared.NewConfig()
-	log.Printf("Client config: %+v", config)
+	//config := shared.NewConfig()
 
 	client, err := connectToServer(port)
 	if err != nil {
