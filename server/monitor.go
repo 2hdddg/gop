@@ -2,77 +2,37 @@ package server
 
 import (
 	"github.com/2hdddg/gop/shared"
-	"io/ioutil"
 	"log"
-	"path"
-	"strings"
-	"sync"
+	"time"
 )
 
-type monitor struct {
-	fileChan      chan *file
-	systemPath    string
-	workspacePath string
-}
+func monitor(config *shared.Config, indexChan chan *index) {
+	count := 0
+	systemTree := newTree(config.SystemPath)
+	systemFileChan := make(chan *file)
 
-func newMonitor(config *shared.Config, fileChan chan *file) *monitor {
-	return &monitor{fileChan: fileChan, systemPath: config.SystemPath}
-}
+	go newTraverser(config.SystemPath, systemFileChan).traverse()
 
-func (m *monitor) _parseFiles(root, packPath string, files []string) {
-	var waitGroup sync.WaitGroup
+	sendIndex := func() {
+		log.Printf("Building and sending new index")
+		indexChan <- systemTree.buildIndex()
+		count = 0
+	}
 
-	for _, tmp := range files {
-		waitGroup.Add(1)
-		f := tmp
-		go func() {
-			defer waitGroup.Done()
-			fullPath := path.Join(root, packPath, f)
-			parsed, err := parseFile(packPath, fullPath)
-			if err == nil {
-				m.fileChan <- parsed
+	for {
+		select {
+		// Timeout
+		case <-time.After(2 * time.Second):
+			if count > 0 {
+				sendIndex()
 			}
-		}()
-	}
-	waitGroup.Wait()
-}
-
-func _probe(path string) (dirs, files []string) {
-	entries, err := ioutil.ReadDir(path)
-	if err != nil {
-		log.Printf("Error analyzing package at %v: %v\n", path, err)
-		return nil, nil
-	}
-
-	for _, i := range entries {
-		mode := i.Mode()
-		name := i.Name()
-		if mode.IsDir() {
-			dirs = append(dirs, name)
-		} else if mode.IsRegular() && strings.LastIndex(name, ".go") > 0 {
-			files = append(files, name)
+		// Progress/update on system tree
+		case file := <-systemFileChan:
+			count += 1
+			systemTree.addFile(file)
+			if count > 100 {
+				sendIndex()
+			}
 		}
 	}
-	return dirs, files
-}
-
-func (m *monitor) _analyzePackage(root, packPath string) {
-	fullPath := path.Join(root, packPath)
-	log.Printf("Analyzing package at %s", fullPath)
-
-	dirs, files := _probe(fullPath)
-	m._parseFiles(root, packPath, files)
-
-	for _, dir := range dirs {
-		m._analyzePackage(root, path.Join(packPath, dir))
-	}
-}
-
-func (m *monitor) _analyzeRoots() {
-	m._analyzePackage(m.systemPath, "")
-}
-
-// Should not block too long
-func (m *monitor) start() {
-	go m._analyzeRoots()
 }

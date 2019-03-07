@@ -1,8 +1,11 @@
 package server
 
-import ()
+import (
+	"path"
+)
 
 type index struct {
+	root  string
 	packs map[string]*pack
 	funcs map[string][]*pack
 }
@@ -12,7 +15,8 @@ func (i *index) packByName(name string) *Answer {
 
 	p := i.packs[name]
 	if p != nil {
-		locations = append(locations, Location{Path: p.packPath})
+		location := Location{Path: path.Join(i.root, p.name)}
+		locations = append(locations, location)
 	}
 	return &Answer{Locations: locations}
 }
@@ -22,20 +26,20 @@ func (i *index) funcByQuery(query *Query) *Answer {
 	checkImported := len(query.Packages) > 0
 
 	packs := i.funcs[query.Name]
-	for _, hit := range packs {
-		found := hit
+	for _, candidate := range packs {
+		match := candidate
 		if checkImported {
-			found = nil
+			match = nil
 			for _, imported := range query.Packages {
-				if hit.packName == imported {
-					found = hit
+				if candidate.name == imported {
+					match = candidate
 					break
 				}
 			}
 		}
 
-		if found != nil {
-			l := found.findFunc(query.Name)
+		if match != nil {
+			l := match.findFunc(query.Name)
 			if l != nil {
 				locations = append(locations, *l)
 			}

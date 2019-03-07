@@ -10,7 +10,7 @@ import (
 type line int
 
 type file struct {
-	filePath string // Full path to file
+	path     string // Full path to file
 	packName string // Qualified name: go/ast
 	funcs    map[string]line
 }
@@ -19,13 +19,12 @@ func parseFunc(fset *token.FileSet, o *ast.Object) line {
 	return line(fset.Position(o.Pos()).Line)
 }
 
-func parseFile(packName, filePath string) (*file, error) {
+func parseFile(packName, path string) (*file, error) {
 	fset := token.NewFileSet()
-	f, err := parser.ParseFile(fset, filePath, nil, 0)
+	f, err := parser.ParseFile(fset, path, nil, 0)
 	if err != nil {
-		return nil, fmt.Errorf("Error while parsing %v: %v\n", filePath, err)
+		return nil, fmt.Errorf("Error while parsing %v: %v\n", path, err)
 	}
-	packageName := packName
 
 	ast.FileExports(f)
 	funcs := make(map[string]line)
@@ -36,8 +35,8 @@ func parseFile(packName, filePath string) (*file, error) {
 	}
 
 	parsed := file{
-		filePath: filePath,
-		packName: packageName,
+		path:     path,
+		packName: packName,
 		funcs:    funcs}
 	return &parsed, nil
 }

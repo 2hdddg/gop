@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/rpc"
 	"strconv"
-	"time"
 )
 
 type Object int
@@ -38,36 +37,6 @@ type Location struct {
 
 type Answer struct {
 	Locations []Location
-}
-
-type build struct {
-	fileChan  chan *file
-	indexChan chan *index
-}
-
-func (b *build) thread() {
-	count := 0
-	packs := newPacks()
-	sendIndex := func() {
-		log.Printf("Building and sending new index")
-		b.indexChan <- packs.buildIndex()
-		count = 0
-	}
-
-	for {
-		select {
-		case <-time.After(2 * time.Second):
-			if count > 0 {
-				sendIndex()
-			}
-		case file := <-b.fileChan:
-			count += 1
-			packs.addFile(file)
-			if count > 100 {
-				sendIndex()
-			}
-		}
-	}
 }
 
 type search struct {
@@ -107,19 +76,13 @@ func Run(port int) {
 		indexChan: indexChan}
 	go search.thread()
 
-	build := build{
-		fileChan:  make(chan *file),
-		indexChan: indexChan}
-	go build.thread()
-
 	config := shared.NewConfig()
 	log.Printf("Server config: %+v", config)
 	if !config.Valid() {
 		log.Fatalln("Invalid config")
 	}
 
-	monitor := newMonitor(config, build.fileChan)
-	monitor.start()
+	go monitor(config, indexChan)
 
 	log.Printf("Starting server on port %d", port)
 	err := rpc.RegisterName("Search", &search)
