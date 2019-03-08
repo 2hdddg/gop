@@ -3,7 +3,7 @@ package server
 import "testing"
 
 func TestFindFuncInPack(t *testing.T) {
-	p := newPackage("p1", "x/p1")
+	p := newPack("p1")
 	p.funcs["f1"] = Location{Path: "f1path"}
 
 	// Existing
@@ -20,7 +20,7 @@ func TestFindFuncInPack(t *testing.T) {
 }
 
 func TestMergePack(t *testing.T) {
-	p := newPackage("pack1", "x/pack1")
+	p := newPack("pack1")
 	f := file{path: "file1", packName: "pack1",
 		funcs: make(map[string]line)}
 	f.funcs["func1"] = 1
