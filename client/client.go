@@ -3,16 +3,15 @@ package client
 import (
 	"fmt"
 	"github.com/2hdddg/gop/server"
-	//"github.com/2hdddg/gop/shared"
+	"github.com/2hdddg/gop/shared"
 	"log"
 	"net/rpc"
 	"strconv"
 )
 
 type Params struct {
-	FuncFilter string
-	PackFilter string
-	FilePath   string
+	Name     string
+	FilePath string
 }
 
 func connectToServer(port int) (client *rpc.Client, err error) {
@@ -46,27 +45,29 @@ func invoke(client *rpc.Client, query *server.Query) {
 }
 
 func Run(port int, params *Params) {
-	//config := shared.NewConfig()
+	config := shared.NewConfig()
 
 	client, err := connectToServer(port)
 	if err != nil {
 		log.Fatalf("Failed to connect to server: %s", err)
 	}
 
-	query := &server.Query{}
+	query := &server.Query{
+		Config: config,
+		Name:   params.Name,
+	}
 
-	if params.FuncFilter != "" {
-		query.Object = server.Function
-		query.Name = params.FuncFilter
-		if params.FilePath != "" {
-			query.Packages, _ = parseFileImports(params.FilePath)
+	if params.FilePath != "" {
+		query.Packages, _ = parseFileImports(params.FilePath)
+		// TODO: Add package for file to list
+	}
+	query.Object = server.Function
+	invoke(client, query)
+
+	/*
+		if params.PackFilter != "" {
+			query.Object = server.Package
+			invoke(client, query)
 		}
-		invoke(client, query)
-	}
-
-	if params.PackFilter != "" {
-		query.Object = server.Package
-		query.Name = params.PackFilter
-		invoke(client, query)
-	}
+	*/
 }

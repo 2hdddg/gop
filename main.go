@@ -17,8 +17,7 @@ func setupParameters() {
 	flag.BoolVar(&isServer, "serve", false, "Run server")
 	flag.IntVar(&port, "port", 8080, "Server port")
 
-	flag.StringVar(&params.FuncFilter, "func", "", "Find function")
-	flag.StringVar(&params.PackFilter, "pack", "", "Find package")
+	flag.StringVar(&params.Name, "name", "", "Find function")
 	flag.StringVar(&params.FilePath, "file", "", "Go file")
 
 	flag.Parse()

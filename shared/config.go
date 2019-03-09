@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"runtime"
 )
 
 type Config struct {
@@ -12,13 +13,9 @@ type Config struct {
 }
 
 func NewConfig() *Config {
-	p := os.Getenv("GOROOT")
-	if p == "" {
-		p = "/usr/lib/go"
-	}
-	p = path.Join(p, "src")
-	system := p
-
+	system := path.Join(runtime.GOROOT(), "src")
+	// GOPATH is a list of paths (colon-separated on Unix)
+	// TODO: Handle multiple paths!
 	workspace := os.Getenv("GOPATH")
 
 	return &Config{

@@ -20,6 +20,7 @@ func newTraverser(root string, fileChan chan *file) *traverser {
 }
 
 func (t *traverser) traverse() {
+	log.Printf("Traversing %v", t.root)
 	dirs, _ := _probe(t.root)
 	// Each subdirectory to root is a package
 	for _, pack := range dirs {
