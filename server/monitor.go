@@ -13,6 +13,7 @@ func monitor(config *shared.Config, indexChan chan *index) {
 	var workspaceTree *tree
 
 	go newTraverser(config.SystemPath, systemFileChan).traverse()
+
 	if config.WorkspacePath != "" {
 		workspaceTree = newTree(config.WorkspacePath)
 		go newTraverser(
@@ -39,6 +40,7 @@ func monitor(config *shared.Config, indexChan chan *index) {
 		case file := <-systemFileChan:
 			systemTree.addFile(file)
 		case file := <-workspaceFileChan:
+			log.Println("Got ws file")
 			workspaceTree.addFile(file)
 		}
 	}

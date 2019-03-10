@@ -1,5 +1,9 @@
 package server
 
+import (
+	"log"
+)
+
 type search struct {
 	indexChan chan *index
 	queryChan chan *query
@@ -24,6 +28,7 @@ func (s *search) thread() {
 		select {
 		case index := <-s.indexChan:
 			s.indexes[index.root] = index
+			log.Printf("Updated index for %v", index.root)
 
 		case q := <-s.queryChan:
 			a := &Answer{}

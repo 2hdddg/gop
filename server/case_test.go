@@ -6,18 +6,16 @@ func buildIndex() *index {
 	t := newTree("root/path")
 
 	// First file with funcs: func1 & func2
-	f := file{path: "pack1/file1", packName: "pack1",
-		funcs: make(map[string]line)}
-	f.funcs["func1"] = 1
-	f.funcs["func2"] = 30
-	t.addFile(&f)
+	f := newFile("pack1", "pack1/file1")
+	f.funcs["func1"] = append(f.funcs["func1"], funcDescr{line: 1})
+	f.funcs["func2"] = append(f.funcs["func2"], funcDescr{line: 30})
+	t.addFile(f)
 
 	// Second file in another package with funcs: func2 & func3
-	f = file{path: "pack2/file2", packName: "pack2",
-		funcs: make(map[string]line)}
-	f.funcs["func1"] = 61
-	f.funcs["func2"] = 90
-	t.addFile(&f)
+	f = newFile("pack2", "pack2/file2")
+	f.funcs["func1"] = append(f.funcs["func1"], funcDescr{line: 61})
+	f.funcs["func2"] = append(f.funcs["func2"], funcDescr{line: 90})
+	t.addFile(f)
 
 	return t.buildIndex()
 }
@@ -35,7 +33,8 @@ func find(a *Answer, path string) *Location {
 func TestFindFunc(t *testing.T) {
 	i := buildIndex()
 	q := Query{Object: Function, Name: "func2"}
-	a := i.funcByQuery(&q)
+	a := &Answer{}
+	i.funcByQuery(&q, a)
 
 	if len(a.Locations) != 2 {
 		t.Errorf("Should have found 2 definitions, found %d",
@@ -56,7 +55,8 @@ func TestFindFunc(t *testing.T) {
 // Verifies that packages can be found
 func TestFindPack(t *testing.T) {
 	i := buildIndex()
-	a := i.packByName("pack1")
+	a := &Answer{}
+	i.packByName("pack1", a)
 
 	p := find(a, "root/path/pack1")
 	if p == nil {

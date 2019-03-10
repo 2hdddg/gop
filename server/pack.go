@@ -19,10 +19,10 @@ func (p *pack) mergeFile(f *file) {
 			delete(p.funcs, funcName)
 		}
 	}
-	for funcName, line := range f.funcs {
+	for funcName, fun := range f.funcs {
 		p.funcs[funcName] = Location{
 			Path: f.path,
-			Line: int(line)}
+			Line: fun[0].line}
 	}
 }
 

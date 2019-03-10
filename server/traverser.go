@@ -45,9 +45,11 @@ func (t *traverser) _analyze(pack string) {
 func (t *traverser) _parse(pack string, files []string) {
 	for _, filename := range files {
 		filePath := path.Join(t.root, pack, filename)
-		parsed, err := parseFile(pack, filePath)
-		if err == nil {
-			t.fileChan <- parsed
+		f := newFile(pack, filePath)
+		f.parse()
+		if f.valid {
+			log.Printf("Sending %v", filePath)
+			t.fileChan <- f
 		}
 	}
 }
