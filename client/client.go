@@ -42,6 +42,9 @@ func invoke(client *rpc.Client, query *server.Query) {
 	for _, l := range answer.Locations {
 		writeInGrepFormat(l.Path, "object", query.Name, l.Line)
 	}
+	for _, e := range answer.Errors {
+		fmt.Println(e)
+	}
 }
 
 func Run(port int, params *Params) {

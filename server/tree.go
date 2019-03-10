@@ -11,12 +11,14 @@ import ()
 type tree struct {
 	root  string           // Root path: /usr/lib/go/src
 	packs map[string]*pack // Set of packs used to build an index.
+	dirty bool
 }
 
 func newTree(root string) *tree {
 	return &tree{
 		root:  root,
 		packs: make(map[string]*pack),
+		dirty: false,
 	}
 }
 
@@ -37,6 +39,7 @@ func (t *tree) _ensurePack(f *file) *pack {
 func (t *tree) addFile(f *file) {
 	p := t._ensurePack(f)
 	p.mergeFile(f)
+	t.dirty = true
 }
 
 func (t *tree) buildIndex() *index {
@@ -53,5 +56,6 @@ func (t *tree) buildIndex() *index {
 			funcs[n] = append(funcs[n], &pcopy)
 		}
 	}
+	t.dirty = false
 	return &index{root: t.root, packs: packs, funcs: funcs}
 }

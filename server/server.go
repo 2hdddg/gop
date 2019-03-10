@@ -23,12 +23,6 @@ type Query struct {
 	Config   *shared.Config
 }
 
-// Internal query
-type query struct {
-	*Query
-	answerChan chan *Answer
-}
-
 type Location struct {
 	Path   string
 	Line   int
@@ -37,58 +31,25 @@ type Location struct {
 
 type Answer struct {
 	Locations []Location
-}
-
-type search struct {
-	indexChan chan *index
-	queryChan chan *query
-}
-
-func (s *search) thread() {
-	var currIndex *index
-	for {
-		select {
-		case currIndex = <-s.indexChan:
-
-		case q := <-s.queryChan:
-			switch q.Object {
-			case Function:
-				q.answerChan <- currIndex.funcByQuery(q.Query)
-			case Package:
-				q.answerChan <- currIndex.packByName(q.Name)
-			}
-		}
-	}
-}
-
-func (s *search) Search(clientQuery *Query, answer *Answer) error {
-	q := &query{clientQuery, make(chan *Answer)}
-	s.queryChan <- q
-	*answer = *<-q.answerChan
-	return nil
+	Errors    []string
 }
 
 func Run(port int) {
-	indexChan := make(chan *index)
-
-	search := search{
-		queryChan: make(chan *query),
-		indexChan: indexChan}
-	go search.thread()
-
 	config := shared.NewConfig()
-	log.Printf("Server config: %+v", config)
 	if !config.Valid() {
 		log.Fatalln("Invalid config")
 	}
 
-	go monitor(config, indexChan)
-
-	log.Printf("Starting server on port %d", port)
-	err := rpc.RegisterName("Search", &search)
+	search := newSearch()
+	go search.thread()
+	err := rpc.RegisterName("Search", search)
 	if err != nil {
 		log.Fatalf("Failed to register search service: %s", err)
 	}
+
+	go monitor(config, search.indexChan)
+
+	log.Printf("Starting server on port %d", port)
 	rpc.HandleHTTP()
 	l, err := net.Listen("tcp", ":"+strconv.Itoa(port))
 	if err != nil {

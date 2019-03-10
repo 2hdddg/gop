@@ -17,6 +17,9 @@ func NewConfig() *Config {
 	// GOPATH is a list of paths (colon-separated on Unix)
 	// TODO: Handle multiple paths!
 	workspace := os.Getenv("GOPATH")
+	if workspace != "" {
+		workspace = path.Join(workspace, "src")
+	}
 
 	return &Config{
 		WorkspacePath: workspace,

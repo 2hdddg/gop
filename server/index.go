@@ -10,19 +10,15 @@ type index struct {
 	funcs map[string][]*pack
 }
 
-func (i *index) packByName(name string) *Answer {
-	var locations []Location
-
+func (i *index) packByName(name string, a *Answer) {
 	p := i.packs[name]
 	if p != nil {
 		location := Location{Path: path.Join(i.root, p.name)}
-		locations = append(locations, location)
+		a.Locations = append(a.Locations, location)
 	}
-	return &Answer{Locations: locations}
 }
 
-func (i *index) funcByQuery(query *Query) *Answer {
-	var locations []Location
+func (i *index) funcByQuery(query *Query, a *Answer) {
 	checkImported := len(query.Packages) > 0
 
 	packs := i.funcs[query.Name]
@@ -41,9 +37,8 @@ func (i *index) funcByQuery(query *Query) *Answer {
 		if match != nil {
 			l := match.findFunc(query.Name)
 			if l != nil {
-				locations = append(locations, *l)
+				a.Locations = append(a.Locations, *l)
 			}
 		}
 	}
-	return &Answer{Locations: locations}
 }
