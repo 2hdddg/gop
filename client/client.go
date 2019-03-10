@@ -62,7 +62,8 @@ func Run(port int, params *Params) {
 
 	if params.FilePath != "" {
 		query.Packages, _ = parseFileImports(params.FilePath)
-		// TODO: Add package for file to list
+		filePackName, _ := parseFilePackage(config, params.FilePath)
+		query.Packages = append(query.Packages, filePackName)
 	}
 	query.Object = server.Function
 	invoke(client, query)

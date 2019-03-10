@@ -37,6 +37,7 @@ func parseFile(packName, path string) (*file, error) {
 	parsed := file{
 		path:     path,
 		packName: packName,
-		funcs:    funcs}
+		funcs:    funcs,
+	}
 	return &parsed, nil
 }
