@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"io/ioutil"
 	"log"
 )
 
@@ -25,14 +26,14 @@ type Struct struct {
 	base Base
 }
 
-type Output struct {
+type Symbols struct {
 	Functions []Function
 	Methods   []Method
 	Structs   []Struct
 }
 
-func NewOutput() *Output {
-	return &Output{
+func NewSymbols() *Symbols {
+	return &Symbols{
 		Functions: make([]Function, 0),
 		Methods:   make([]Method, 0),
 		Structs:   make([]Struct, 0),
@@ -43,7 +44,7 @@ func linenumber(fset *token.FileSet, o ast.Node) int {
 	return fset.Position(o.Pos()).Line
 }
 
-func (o *Output) fun(fs *token.FileSet, f *ast.FuncDecl) {
+func (o *Symbols) fun(fs *token.FileSet, f *ast.FuncDecl) {
 	if f.Recv != nil {
 		// Method
 		if len(f.Recv.List) != 1 {
@@ -77,7 +78,7 @@ func (o *Output) fun(fs *token.FileSet, f *ast.FuncDecl) {
 	})
 }
 
-func (o *Output) typ(fs *token.FileSet, s *ast.TypeSpec) {
+func (o *Symbols) typ(fs *token.FileSet, s *ast.TypeSpec) {
 	switch s.Type.(type) {
 	case *ast.StructType:
 		// Struct
@@ -90,7 +91,7 @@ func (o *Output) typ(fs *token.FileSet, s *ast.TypeSpec) {
 	}
 }
 
-func (o *Output) Parse(code string) error {
+func (o *Symbols) Parse(code string) error {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, "", code, 0)
 	if err != nil {
@@ -118,4 +119,15 @@ func (o *Output) Parse(code string) error {
 	}
 
 	return nil
+}
+
+func Parse(path string) (*Symbols, error) {
+	buf, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	code := string(buf)
+	symbols := NewSymbols()
+	symbols.Parse(code)
+	return symbols, nil
 }

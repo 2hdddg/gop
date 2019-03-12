@@ -3,7 +3,7 @@ package parser
 import "testing"
 
 var (
-	o *Output
+	o *Symbols
 	e error
 	c string
 )
@@ -27,7 +27,7 @@ func assertLine(t *testing.T, expected, actual int) {
 }
 
 func TestParsingOfFunctions(t *testing.T) {
-	o = NewOutput()
+	o = NewSymbols()
 	c = `package x
 		func Exported() {
 		}`
@@ -40,7 +40,7 @@ func TestParsingOfFunctions(t *testing.T) {
 }
 
 func TestParsingOfStructs(t *testing.T) {
-	o = NewOutput()
+	o = NewSymbols()
 	c = `package x
 		type AStruct struct {
 			s string
@@ -54,7 +54,7 @@ func TestParsingOfStructs(t *testing.T) {
 }
 
 func TestParsingOfMethods(t *testing.T) {
-	o = NewOutput()
+	o = NewSymbols()
 	c = `package x
 		type AStruct struct {
 			s string
