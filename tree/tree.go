@@ -1,7 +1,10 @@
 package tree
 
 import (
-	"path"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/2hdddg/gop/parser"
 )
@@ -26,11 +29,25 @@ type Tree struct {
 	Packs []*Package
 }
 
-func NewTree(path string) *Tree {
-	return &Tree{
-		Path:  path,
-		Packs: make([]*Package, 3),
+func NewTree(path string) (*Tree, error) {
+	// Check that root is valid
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		err = fmt.Errorf("Tree root doesn't exist: %v", path)
+		return nil, err
 	}
+
+	// Make the root absolute. Use absolute paths everywhere to
+	// make comparisons simpler when matching client roots with
+	// server roots.
+	abspath, err := filepath.Abs(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Tree{
+		Path:  abspath,
+		Packs: []*Package{},
+	}, nil
 }
 
 func (t *Tree) AddPackage(name string) *Package {
@@ -41,12 +58,13 @@ func (t *Tree) AddPackage(name string) *Package {
 
 func (p *Package) AddPackage(name string) *Package {
 	s := newPackage(name, p.Path)
+	s.Name = strings.Join([]string{p.Name, name}, "/")
 	p.Packs = append(p.Packs, s)
 	return s
 }
 
 func (p *Package) AddFile(name string, parse Parse) (*File, error) {
-	filepath := path.Join(p.Path, name)
+	filepath := filepath.Join(p.Path, name)
 	syms, err := parse(filepath)
 	if err != nil {
 		return nil, err
@@ -64,8 +82,8 @@ func (p *Package) AddFile(name string, parse Parse) (*File, error) {
 func newPackage(name, parent string) *Package {
 	return &Package{
 		Name:  name,
-		Files: make([]*File, 3),
-		Packs: make([]*Package, 3),
-		Path:  path.Join(parent, name),
+		Files: []*File{},
+		Packs: []*Package{},
+		Path:  filepath.Join(parent, name),
 	}
 }
