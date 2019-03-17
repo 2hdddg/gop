@@ -15,7 +15,9 @@ type File struct {
 	Syms *parser.Symbols
 }
 
-type Parse func(path string) (*parser.Symbols, error)
+type Parser interface {
+	Parse(path string) (*parser.Symbols, error)
+}
 
 type Package struct {
 	Name  string
@@ -27,6 +29,11 @@ type Package struct {
 type Tree struct {
 	Path  string
 	Packs []*Package
+}
+
+// Implement parser
+func (t *Tree) Parse(path string) (*parser.Symbols, error) {
+	return parser.Parse(path)
 }
 
 func NewTree(path string) (*Tree, error) {
@@ -63,9 +70,9 @@ func (p *Package) AddPackage(name string) *Package {
 	return s
 }
 
-func (p *Package) AddFile(name string, parse Parse) (*File, error) {
+func (p *Package) AddFile(name string, parser Parser) (*File, error) {
 	filepath := filepath.Join(p.Path, name)
-	syms, err := parse(filepath)
+	syms, err := parser.Parse(filepath)
 	if err != nil {
 		return nil, err
 	}

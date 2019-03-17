@@ -5,13 +5,13 @@ import (
 )
 
 func TestNewBuilder(t *testing.T) {
-	_, err := NewBuilder(onParsedFake, ".")
+	_, err := NewBuilder(".")
 
 	assertNoError(t, err)
 }
 
 func TestBuild(t *testing.T) {
-	b, _ := NewBuilder(onParsedFake, "/")
+	b, _ := NewBuilder("/")
 	filesys := &FakeDir{
 		name: "",
 		dirs: []*FakeDir{
@@ -25,8 +25,8 @@ func TestBuild(t *testing.T) {
 		files: []*FakeFile{},
 	}
 
-	b.readDir = MakeReadDir(filesys)
-	b.parse = parseFake
+	b.reader = filesys
+	b.parser = &FakeParser{}
 	tree, err := b.Build()
 
 	assertNoError(t, err)

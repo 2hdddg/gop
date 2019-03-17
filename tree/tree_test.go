@@ -54,9 +54,10 @@ func TestAddPackageToPackage(t *testing.T) {
 
 func TestAddFileToPackage(t *testing.T) {
 	tree, root := setup()
+	fakeParser := &FakeParser{}
 
 	pack := tree.AddPackage("pname")
-	file, err := pack.AddFile("fname", parseFake)
+	file, err := pack.AddFile("fname", fakeParser)
 
 	assertName(t, "fname", file.Name)
 	assertPath(t, filepath.Join(root, "pname", "fname"), file.Path)

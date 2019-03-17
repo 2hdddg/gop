@@ -44,7 +44,10 @@ func assertNoError(t *testing.T, err error) {
 func onParsedFake(t *Tree, p *Package) {
 }
 
-func parseFake(path string) (*parser.Symbols, error) {
+type FakeParser struct {
+}
+
+func (p *FakeParser) Parse(path string) (*parser.Symbols, error) {
 	return parser.NewSymbols(), nil
 }
 
@@ -62,18 +65,23 @@ type FakeDir struct {
 func (f *FakeFile) Name() string {
 	return f.name
 }
+
 func (f *FakeFile) Size() int64 {
 	return 0
 }
+
 func (f *FakeFile) Mode() os.FileMode {
 	return 0
 }
+
 func (f *FakeFile) ModTime() time.Time {
 	return time.Now()
 }
+
 func (f *FakeFile) IsDir() bool {
 	return false
 }
+
 func (f *FakeFile) Sys() interface{} {
 	return nil
 }
@@ -81,18 +89,23 @@ func (f *FakeFile) Sys() interface{} {
 func (f *FakeDir) Name() string {
 	return f.name
 }
+
 func (f *FakeDir) Size() int64 {
 	return 0
 }
+
 func (f *FakeDir) Mode() os.FileMode {
 	return 0
 }
+
 func (f *FakeDir) ModTime() time.Time {
 	return time.Now()
 }
+
 func (f *FakeDir) IsDir() bool {
 	return true
 }
+
 func (f *FakeDir) Sys() interface{} {
 	return nil
 }
@@ -106,47 +119,34 @@ func (f *FakeDir) findDir(name string) *FakeDir {
 	return nil
 }
 
-func MakeReadDir(root *FakeDir) ReadDir {
-	return func(dirpath string) (fis []os.FileInfo, err error) {
-		log.Printf("In readdir %v", dirpath)
-		parts := strings.Split(filepath.ToSlash(dirpath), "/")
-		if len(parts) == 0 {
-			err = fmt.Errorf("Empty path")
-			return
-		}
-
-		filtered := parts[:0]
-		for _, p := range parts {
-			if p != "" {
-				filtered = append(filtered, p)
-			}
-		}
-
-		//log.Printf("Len: %v, %v", len(filtered), filtered)
-		/*
-			if parts[0] != root.name {
-				err = fmt.Errorf("Invalid root: %v", parts[0])
-				return
-			}
-		*/
-
-		curr := root
-		for _, part := range filtered {
-			//log.Printf("Looking for %v", part)
-			curr = curr.findDir(part)
-			if curr == nil {
-				err = fmt.Errorf("Path not found: %v", part)
-				return
-			}
-		}
-		for _, dir := range curr.dirs {
-			//log.Printf("Appending %v", dir.name)
-			fis = append(fis, dir)
-		}
-		for _, file := range curr.files {
-			//log.Printf("Appending %v", file.name)
-			fis = append(fis, file)
-		}
+func (root *FakeDir) ReadDirectory(dirpath string) (fis []os.FileInfo, err error) {
+	log.Printf("In readdir %v", dirpath)
+	parts := strings.Split(filepath.ToSlash(dirpath), "/")
+	if len(parts) == 0 {
+		err = fmt.Errorf("Empty path")
 		return
 	}
+
+	filtered := parts[:0]
+	for _, p := range parts {
+		if p != "" {
+			filtered = append(filtered, p)
+		}
+	}
+
+	curr := root
+	for _, part := range filtered {
+		curr = curr.findDir(part)
+		if curr == nil {
+			err = fmt.Errorf("Path not found: %v", part)
+			return
+		}
+	}
+	for _, dir := range curr.dirs {
+		fis = append(fis, dir)
+	}
+	for _, file := range curr.files {
+		fis = append(fis, file)
+	}
+	return
 }

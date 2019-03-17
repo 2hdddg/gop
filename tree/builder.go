@@ -6,32 +6,41 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/2hdddg/gop/parser"
 )
 
-type OnParsed func(t *Tree, p *Package)
-type ReadDir func(dirname string) ([]os.FileInfo, error)
-
-type Builder struct {
-	onParsed OnParsed
-	readDir  ReadDir
-	tree     *Tree
-	parse    Parse
+type DirectoryReader interface {
+	ReadDirectory(path string) ([]os.FileInfo, error)
 }
 
-func NewBuilder(onParsed OnParsed, rootPath string) (*Builder, error) {
+type ProgressFeedback interface {
+	OnPackageParsed(t *Tree, p *Package)
+}
+
+type Builder struct {
+	Progress ProgressFeedback
+	reader   DirectoryReader
+	tree     *Tree
+	parser   Parser
+}
+
+func NewBuilder(rootPath string) (*Builder, error) {
 	tree, err := NewTree(rootPath)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Builder{
-		onParsed: onParsed,
-		readDir:  ioutil.ReadDir,
-		tree:     tree,
-		parse:    parser.Parse,
-	}, nil
+	builder := &Builder{
+		tree:   tree,
+		parser: tree,
+	}
+	builder.reader = builder
+
+	return builder, nil
+}
+
+// Implement DirecoryReader
+func (b *Builder) ReadDirectory(path string) ([]os.FileInfo, error) {
+	return ioutil.ReadDir(path)
 }
 
 func (b *Builder) Build() (*Tree, error) {
@@ -55,10 +64,12 @@ func (b *Builder) pack(name, path string) (err error) {
 	p := b.tree.AddPackage(name)
 
 	for _, file := range files {
-		p.AddFile(file, parser.Parse)
+		p.AddFile(file, b.parser)
 	}
 	// Notify about completed package
-	b.onParsed(b.tree, p)
+	if b.Progress != nil {
+		b.Progress.OnPackageParsed(b.tree, p)
+	}
 	log.Printf("Parsed package %v", name)
 
 	for _, dir := range dirs {
@@ -69,7 +80,7 @@ func (b *Builder) pack(name, path string) (err error) {
 }
 
 func (b *Builder) probe(dir string) (dirs, files []string, err error) {
-	fis, err := b.readDir(dir)
+	fis, err := b.reader.ReadDirectory(dir)
 	if err != nil {
 		return
 	}
