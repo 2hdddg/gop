@@ -73,15 +73,18 @@ func (b *Builder) pack(name, path string) (err error) {
 	log.Printf("Parsed package %v", name)
 
 	for _, dir := range dirs {
-		b.pack(dir, filepath.Join(p.Path, dir))
+		fullName := name + "/" + dir
+		b.pack(fullName, filepath.Join(p.Path, dir))
 	}
 
 	return
 }
 
 func (b *Builder) probe(dir string) (dirs, files []string, err error) {
+	log.Printf("Probing %v", dir)
 	fis, err := b.reader.ReadDirectory(dir)
 	if err != nil {
+		log.Printf("Error reading %v", dir)
 		return
 	}
 

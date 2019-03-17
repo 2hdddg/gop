@@ -14,16 +14,16 @@ type Base struct {
 }
 
 type Function struct {
-	base Base
+	Base Base
 }
 
 type Method struct {
-	base   Base
+	Base   Base
 	Object string
 }
 
 type Struct struct {
-	base Base
+	Base Base
 }
 
 type Symbols struct {
@@ -56,10 +56,10 @@ func (o *Symbols) fun(fs *token.FileSet, f *ast.FuncDecl) {
 		case *ast.Ident:
 			object = x.Name
 		default:
-			log.Println("Unexpected")
+			//log.Println("Unexpected")
 		}
 		o.Methods = append(o.Methods, Method{
-			base: Base{
+			Base: Base{
 				Name: f.Name.Name,
 				Line: linenumber(fs, f),
 			},
@@ -71,7 +71,7 @@ func (o *Symbols) fun(fs *token.FileSet, f *ast.FuncDecl) {
 
 	// Function
 	o.Functions = append(o.Functions, Function{
-		base: Base{
+		Base: Base{
 			Name: f.Name.Name,
 			Line: linenumber(fs, f),
 		},
@@ -83,7 +83,7 @@ func (o *Symbols) typ(fs *token.FileSet, s *ast.TypeSpec) {
 	case *ast.StructType:
 		// Struct
 		o.Structs = append(o.Structs, Struct{
-			base: Base{
+			Base: Base{
 				Name: s.Name.Name,
 				Line: linenumber(fs, s),
 			},
@@ -110,7 +110,7 @@ func (o *Symbols) Parse(code string) error {
 				case *ast.TypeSpec:
 					o.typ(fset, it)
 				default:
-					log.Printf("Unknown spec: %T", spec)
+					//log.Printf("Unknown spec: %T", spec)
 				}
 			}
 		default:
@@ -129,5 +129,7 @@ func Parse(path string) (*Symbols, error) {
 	code := string(buf)
 	symbols := NewSymbols()
 	symbols.Parse(code)
+
+	log.Println(*symbols)
 	return symbols, nil
 }

@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"github.com/2hdddg/gop/client"
-	"github.com/2hdddg/gop/server"
+	//"github.com/2hdddg/gop/server"
 	"log"
 )
 
@@ -30,7 +30,8 @@ func main() {
 	log.SetFlags(log.Ltime | log.Lshortfile)
 
 	if isServer {
-		server.Run(port)
+		//server.Run(port)
+		run_server(port)
 		return
 	}
 
