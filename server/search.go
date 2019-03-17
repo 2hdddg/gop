@@ -1,5 +1,6 @@
 package server
 
+/*
 import (
 	"log"
 )
@@ -64,3 +65,4 @@ func (s *search) Search(clientQuery *Query, answer *Answer) error {
 	*answer = *<-q.answerChan
 	return nil
 }
+*/

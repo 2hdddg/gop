@@ -2,11 +2,12 @@ package client
 
 import (
 	"fmt"
-	"github.com/2hdddg/gop/server"
-	"github.com/2hdddg/gop/shared"
 	"log"
 	"net/rpc"
 	"strconv"
+
+	"github.com/2hdddg/gop/config"
+	"github.com/2hdddg/gop/search"
 )
 
 type Params struct {
@@ -27,51 +28,29 @@ func connectToServer(port int) (client *rpc.Client, err error) {
 	return client, err
 }
 
-func writeInGrepFormat(path, what, filter string, line int) {
-	fmt.Printf("%s:%d:%s matching '%s'\n", path, line, what, filter)
-}
-
-func invoke(client *rpc.Client, query *server.Query) {
-	answer := &server.Answer{}
-	err := client.Call("Search.Search", query, answer)
+func invoke(client *rpc.Client, req *search.Request) {
+	res := &search.Response{}
+	err := client.Call("Search.Search", req, res)
 	if err != nil {
 		log.Fatalf("Failed to call server: %s", err)
 	}
 
-	// Write to stdout in grep format
-	for _, l := range answer.Locations {
-		writeInGrepFormat(l.Path, "object", query.Name, l.Line)
-	}
-	for _, e := range answer.Errors {
-		fmt.Println(e)
+	for _, h := range res.Hits {
+		fmt.Printf("%s:%d:%s\n", h.Path, h.Line, h.Descr)
 	}
 }
 
-func Run(port int, params *Params) {
-	config := shared.NewConfig()
+func Run(config *config.Config, port int, params *Params) {
 
 	client, err := connectToServer(port)
 	if err != nil {
 		log.Fatalf("Failed to connect to server: %s", err)
 	}
 
-	query := &server.Query{
-		Config: config,
-		Name:   params.Name,
+	req := &search.Request{
+		//Config: config,
+		Name: params.Name,
 	}
 
-	if params.FilePath != "" {
-		query.Packages, _ = parseFileImports(params.FilePath)
-		filePackName, _ := parseFilePackage(config, params.FilePath)
-		query.Packages = append(query.Packages, filePackName)
-	}
-	query.Object = server.Function
-	invoke(client, query)
-
-	/*
-		if params.PackFilter != "" {
-			query.Object = server.Package
-			invoke(client, query)
-		}
-	*/
+	invoke(client, req)
 }

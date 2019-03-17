@@ -3,7 +3,8 @@ package main
 import (
 	"flag"
 	"github.com/2hdddg/gop/client"
-	//"github.com/2hdddg/gop/server"
+	"github.com/2hdddg/gop/config"
+	"github.com/2hdddg/gop/server"
 	"log"
 )
 
@@ -25,17 +26,17 @@ func setupParameters() {
 
 func main() {
 	setupParameters()
+	config := config.NewConfig()
 
 	// Configure standard logger
 	log.SetFlags(log.Ltime | log.Lshortfile)
 
 	if isServer {
-		//server.Run(port)
-		run_server(port)
+		server.Run(config, port)
 		return
 	}
 
-	client.Run(port, &params)
+	client.Run(config, port, &params)
 }
 
 /*

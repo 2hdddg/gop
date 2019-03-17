@@ -1,7 +1,10 @@
 package server
 
 import (
-	"github.com/2hdddg/gop/shared"
+	"github.com/2hdddg/gop/config"
+	"github.com/2hdddg/gop/search"
+	"github.com/2hdddg/gop/tree"
+
 	"log"
 	"net"
 	"net/http"
@@ -9,6 +12,7 @@ import (
 	"strconv"
 )
 
+/*
 type Object int
 
 const (
@@ -20,7 +24,7 @@ type Query struct {
 	Object   Object
 	Name     string
 	Packages []string
-	Config   *shared.Config
+	Config   *config.Config
 }
 
 type Location struct {
@@ -33,21 +37,22 @@ type Answer struct {
 	Locations []Location
 	Errors    []string
 }
+*/
 
-func Run(port int) {
-	config := shared.NewConfig()
-	if !config.Valid() {
-		log.Fatalln("Invalid config")
-	}
-
-	search := newSearch()
-	go search.thread()
-	err := rpc.RegisterName("Search", search)
+func Run(config *config.Config, port int) {
+	service := search.NewService()
+	client := service.Start()
+	err := rpc.RegisterName("Search", client)
 	if err != nil {
 		log.Fatalf("Failed to register search service: %s", err)
 	}
 
-	go monitor(config, search.indexChan)
+	builder, err := tree.NewBuilder(config.SystemPath)
+	tree, err := builder.Build()
+
+	service.NewOrUpdatedTree(tree)
+
+	//go monitor(config, search.indexChan)
 
 	log.Printf("Starting server on port %d", port)
 	rpc.HandleHTTP()
