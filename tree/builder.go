@@ -81,7 +81,6 @@ func (b *Builder) pack(name, path string) (err error) {
 }
 
 func (b *Builder) probe(dir string) (dirs, files []string, err error) {
-	log.Printf("Probing %v", dir)
 	fis, err := b.reader.ReadDirectory(dir)
 	if err != nil {
 		log.Printf("Error reading %v", dir)

@@ -19,6 +19,7 @@ type Hit struct {
 type Index struct {
 	rootPath  string
 	functions map[string][]*Hit
+	methods   map[string][]*Hit
 }
 
 type Query struct {
@@ -51,6 +52,18 @@ func (i *Index) add(p *tree.Package) {
 			funcs = append(funcs, h)
 			i.functions[key] = funcs
 		}
+		for _, s := range f.Syms.Methods {
+			h := &Hit{
+				Package:  ip,
+				Filename: f.Name,
+				Line:     s.Base.Line,
+				Extra:    s.Object,
+			}
+			key := s.Base.Name
+			methods := i.methods[key]
+			methods = append(methods, h)
+			i.methods[key] = methods
+		}
 	}
 }
 
@@ -65,6 +78,7 @@ func Build(tree *tree.Tree) Index {
 	i := Index{
 		rootPath:  tree.Path,
 		functions: map[string][]*Hit{},
+		methods:   map[string][]*Hit{},
 	}
 	for _, p := range tree.Packs {
 		i.traverse(p)
@@ -72,7 +86,8 @@ func Build(tree *tree.Tree) Index {
 	return i
 }
 
-func (i *Index) Query(q *Query) (functions []*Hit) {
+func (i *Index) Query(q *Query) (functions []*Hit, methods []*Hit) {
 	functions = i.functions[q.Name]
+	methods = i.methods[q.Name]
 	return
 }

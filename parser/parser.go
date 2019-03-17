@@ -130,6 +130,6 @@ func Parse(path string) (*Symbols, error) {
 	symbols := NewSymbols()
 	symbols.Parse(code)
 
-	log.Println(*symbols)
+	//log.Println(*symbols)
 	return symbols, nil
 }
