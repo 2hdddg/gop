@@ -12,33 +12,6 @@ import (
 	"strconv"
 )
 
-/*
-type Object int
-
-const (
-	Function Object = 0
-	Package  Object = 1
-)
-
-type Query struct {
-	Object   Object
-	Name     string
-	Packages []string
-	Config   *config.Config
-}
-
-type Location struct {
-	Path   string
-	Line   int
-	Column int
-}
-
-type Answer struct {
-	Locations []Location
-	Errors    []string
-}
-*/
-
 func Run(config *config.Config, port int) {
 	service := search.NewService()
 	client := service.Start()
@@ -49,10 +22,7 @@ func Run(config *config.Config, port int) {
 
 	builder, err := tree.NewBuilder(config.SystemPath)
 	tree, err := builder.Build()
-
 	service.NewOrUpdatedTree(tree)
-
-	//go monitor(config, search.indexChan)
 
 	log.Printf("Starting server on port %d", port)
 	rpc.HandleHTTP()

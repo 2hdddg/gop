@@ -12,12 +12,13 @@ type DirectoryReader interface {
 	ReadDirectory(path string) ([]os.FileInfo, error)
 }
 
-type ProgressFeedback interface {
+type Progress interface {
 	OnPackageParsed(t *Tree, p *Package)
+	OnTreeParsed(t *Tree)
 }
 
 type Builder struct {
-	Progress ProgressFeedback
+	Progress Progress
 	reader   DirectoryReader
 	tree     *Tree
 	parser   Parser
@@ -52,6 +53,11 @@ func (b *Builder) Build() (*Tree, error) {
 	for _, dir := range dirs {
 		err = b.pack(dir, filepath.Join(b.tree.Path, dir))
 	}
+
+	if b.Progress != nil {
+		b.Progress.OnTreeParsed(b.tree)
+	}
+
 	return b.tree, nil
 }
 

@@ -41,9 +41,6 @@ func assertNoError(t *testing.T, err error) {
 	}
 }
 
-func onParsedFake(t *Tree, p *Package) {
-}
-
 type FakeParser struct {
 }
 
@@ -149,4 +146,17 @@ func (root *FakeDir) ReadDirectory(dirpath string) (fis []os.FileInfo, err error
 		fis = append(fis, file)
 	}
 	return
+}
+
+type ProgressRecorder struct {
+	NumPackageParsed int
+	NumTreesParsed   int
+}
+
+func (r *ProgressRecorder) OnPackageParsed(t *Tree, p *Package) {
+	r.NumPackageParsed++
+}
+
+func (r *ProgressRecorder) OnTreeParsed(t *Tree) {
+	r.NumTreesParsed++
 }
