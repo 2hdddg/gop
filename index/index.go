@@ -56,9 +56,9 @@ func (i *Index) add(p *tree.Package) {
 			h := &Hit{
 				Package:  ip,
 				Filename: f.Name,
-				Line:     s.Base.Line,
+				Line:     s.Line,
 			}
-			key := s.Base.Name
+			key := s.Name
 			funcs := i.functions[key]
 			funcs = append(funcs, h)
 			i.functions[key] = funcs
@@ -67,10 +67,10 @@ func (i *Index) add(p *tree.Package) {
 			h := &Hit{
 				Package:  ip,
 				Filename: f.Name,
-				Line:     s.Base.Line,
+				Line:     s.Line,
 				Extra:    s.Object,
 			}
-			key := s.Base.Name
+			key := s.Name
 			methods := i.methods[key]
 			methods = append(methods, h)
 			i.methods[key] = methods

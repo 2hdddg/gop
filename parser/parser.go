@@ -8,35 +8,23 @@ import (
 	"log"
 )
 
-type Base struct {
-	Name string
-	Line int
-}
-
-type Function struct {
-	Base Base
-}
-
-type Method struct {
-	Base   Base
+type Symbol struct {
+	Name   string
+	Line   int
 	Object string
 }
 
-type Struct struct {
-	Base Base
-}
-
 type Symbols struct {
-	Functions []Function
-	Methods   []Method
-	Structs   []Struct
+	Functions []Symbol
+	Methods   []Symbol
+	Structs   []Symbol
 }
 
 func NewSymbols() *Symbols {
 	return &Symbols{
-		Functions: make([]Function, 0),
-		Methods:   make([]Method, 0),
-		Structs:   make([]Struct, 0),
+		Functions: make([]Symbol, 0),
+		Methods:   make([]Symbol, 0),
+		Structs:   make([]Symbol, 0),
 	}
 }
 
@@ -58,11 +46,9 @@ func (o *Symbols) fun(fs *token.FileSet, f *ast.FuncDecl) {
 		default:
 			//log.Println("Unexpected")
 		}
-		o.Methods = append(o.Methods, Method{
-			Base: Base{
-				Name: f.Name.Name,
-				Line: linenumber(fs, f),
-			},
+		o.Methods = append(o.Methods, Symbol{
+			Name:   f.Name.Name,
+			Line:   linenumber(fs, f),
 			Object: object,
 		})
 
@@ -70,11 +56,9 @@ func (o *Symbols) fun(fs *token.FileSet, f *ast.FuncDecl) {
 	}
 
 	// Function
-	o.Functions = append(o.Functions, Function{
-		Base: Base{
-			Name: f.Name.Name,
-			Line: linenumber(fs, f),
-		},
+	o.Functions = append(o.Functions, Symbol{
+		Name: f.Name.Name,
+		Line: linenumber(fs, f),
 	})
 }
 
@@ -82,11 +66,9 @@ func (o *Symbols) typ(fs *token.FileSet, s *ast.TypeSpec) {
 	switch s.Type.(type) {
 	case *ast.StructType:
 		// Struct
-		o.Structs = append(o.Structs, Struct{
-			Base: Base{
-				Name: s.Name.Name,
-				Line: linenumber(fs, s),
-			},
+		o.Structs = append(o.Structs, Symbol{
+			Name: s.Name.Name,
+			Line: linenumber(fs, s),
 		})
 	}
 }
@@ -130,6 +112,5 @@ func Parse(path string) (*Symbols, error) {
 	symbols := NewSymbols()
 	symbols.Parse(code)
 
-	//log.Println(*symbols)
 	return symbols, nil
 }

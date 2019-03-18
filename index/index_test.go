@@ -41,11 +41,9 @@ func TestBuildAndQueryBaseline(t *testing.T) {
 	}
 	// Setup parser result
 	s := pars.syms
-	s.Functions = append(s.Functions, parser.Function{
-		Base: parser.Base{
-			Name: "Func1",
-			Line: 666,
-		},
+	s.Functions = append(s.Functions, parser.Symbol{
+		Name: "Func1",
+		Line: 666,
 	})
 
 	// Build tree with parsed data
