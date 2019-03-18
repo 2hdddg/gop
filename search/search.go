@@ -4,7 +4,6 @@ package search
 
 import (
 	"log"
-	"path"
 
 	"github.com/2hdddg/gop/index"
 	"github.com/2hdddg/gop/tree"
@@ -72,7 +71,7 @@ func (s *Service) service() {
 
 			for _, h := range f {
 				m.clientRes.Hits = append(m.clientRes.Hits, Hit{
-					Path:  path.Join(h.Package.Path, h.Filename),
+					Path:  h.Path(),
 					Line:  h.Line,
 					Descr: "Func def",
 				})

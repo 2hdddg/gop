@@ -1,6 +1,8 @@
 package index
 
 import (
+	"path"
+
 	"github.com/2hdddg/gop/tree"
 )
 
@@ -14,6 +16,10 @@ type Hit struct {
 	Filename string
 	Line     int
 	Extra    string // Depends on type of hit
+}
+
+func (h *Hit) Path() string {
+	return path.Join(h.Package.Path, h.Filename)
 }
 
 type Index struct {
