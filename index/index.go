@@ -33,6 +33,11 @@ type Query struct {
 	Imported []string
 }
 
+type Result struct {
+	Functions []*Hit
+	Methods   []*Hit
+}
+
 func NewQuery(name string) *Query {
 	return &Query{
 		Name:     name,
@@ -92,8 +97,9 @@ func Build(tree *tree.Tree) Index {
 	return i
 }
 
-func (i *Index) Query(q *Query) (functions []*Hit, methods []*Hit) {
-	functions = i.functions[q.Name]
-	methods = i.methods[q.Name]
-	return
+func (i *Index) Query(q *Query) *Result {
+	return &Result{
+		Functions: i.functions[q.Name],
+		Methods:   i.methods[q.Name],
+	}
 }

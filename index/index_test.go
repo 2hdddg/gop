@@ -63,13 +63,13 @@ func TestBuildAndQueryBaseline(t *testing.T) {
 	q := &Query{
 		Name: "Func1",
 	}
-	funcs, _ := i.Query(q)
+	res := i.Query(q)
 
-	if len(funcs) != 1 {
+	if len(res.Functions) != 1 {
 		t.Fatalf("Query should return 1 func")
 	}
 
-	funcs[0].assert(t, &Hit{
+	res.Functions[0].assert(t, &Hit{
 		Package: &Package{
 			Path: pack.Path,
 			Name: "pack",

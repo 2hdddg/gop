@@ -67,9 +67,9 @@ func (s *Service) service() {
 			i = index.Build(m.tree)
 			m.ackChan <- ackMsg{}
 		case m := <-s.reqChan:
-			f, _ := i.Query(&index.Query{Name: m.clientReq.Name})
+			res := i.Query(&index.Query{Name: m.clientReq.Name})
 
-			for _, h := range f {
+			for _, h := range res.Functions {
 				m.clientRes.Hits = append(m.clientRes.Hits, Hit{
 					Path:  h.Path(),
 					Line:  h.Line,
