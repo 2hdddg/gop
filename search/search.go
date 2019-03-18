@@ -55,6 +55,16 @@ func NewService() *Service {
 	}
 }
 
+func (res *Response) add(hits []*index.Hit, descr string) {
+	for _, h := range hits {
+		res.Hits = append(res.Hits, Hit{
+			Path:  h.Path(),
+			Line:  h.Line,
+			Descr: descr,
+		})
+	}
+}
+
 func (s *Service) service() {
 	var i index.Index
 
@@ -68,14 +78,8 @@ func (s *Service) service() {
 			m.ackChan <- ackMsg{}
 		case m := <-s.reqChan:
 			res := i.Query(&index.Query{Name: m.clientReq.Name})
-
-			for _, h := range res.Functions {
-				m.clientRes.Hits = append(m.clientRes.Hits, Hit{
-					Path:  h.Path(),
-					Line:  h.Line,
-					Descr: "Func def",
-				})
-			}
+			m.clientRes.add(res.Functions, "Function")
+			m.clientRes.add(res.Methods, "Method")
 
 			m.ackChan <- ackMsg{}
 		}

@@ -3,6 +3,7 @@ package index
 import (
 	"path"
 
+	"github.com/2hdddg/gop/parser"
 	"github.com/2hdddg/gop/tree"
 )
 
@@ -45,35 +46,32 @@ func NewQuery(name string) *Query {
 	}
 }
 
+func toHit(p *Package, f *tree.File, s *parser.Symbol) *Hit {
+	return &Hit{
+		Package:  p,
+		Filename: f.Name,
+		Line:     s.Line,
+		Extra:    s.Object,
+	}
+}
+
+func appendToMap(key string, h *Hit, m map[string][]*Hit) {
+	l := m[key]
+	l = append(l, h)
+	m[key] = l
+}
+
 func (i *Index) add(p *tree.Package) {
 	ip := &Package{
 		Path: p.Path,
 		Name: p.Name,
 	}
 	for _, f := range p.Files {
-		// Add functions
 		for _, s := range f.Syms.Functions {
-			h := &Hit{
-				Package:  ip,
-				Filename: f.Name,
-				Line:     s.Line,
-			}
-			key := s.Name
-			funcs := i.functions[key]
-			funcs = append(funcs, h)
-			i.functions[key] = funcs
+			appendToMap(s.Name, toHit(ip, f, &s), i.functions)
 		}
 		for _, s := range f.Syms.Methods {
-			h := &Hit{
-				Package:  ip,
-				Filename: f.Name,
-				Line:     s.Line,
-				Extra:    s.Object,
-			}
-			key := s.Name
-			methods := i.methods[key]
-			methods = append(methods, h)
-			i.methods[key] = methods
+			appendToMap(s.Name, toHit(ip, f, &s), i.methods)
 		}
 	}
 }
