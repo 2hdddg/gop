@@ -43,8 +43,15 @@ func (o *Symbols) fun(fs *token.FileSet, f *ast.FuncDecl) {
 		switch x := field.Type.(type) {
 		case *ast.Ident:
 			object = x.Name
+		case *ast.StarExpr:
+			switch y := x.X.(type) {
+			case *ast.Ident:
+				object = y.Name
+			default:
+				log.Printf("Unexpected *: %T", y)
+			}
 		default:
-			//log.Println("Unexpected")
+			log.Printf("Unexpected: %T", x)
 		}
 		o.Methods = append(o.Methods, Symbol{
 			Name:   f.Name.Name,

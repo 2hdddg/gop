@@ -21,17 +21,8 @@ func (a *Symbol) assert(t *testing.T, e *Symbol) {
 	if e.Line != a.Line {
 		t.Errorf("Expected line %v but was %v", e.Line, a.Line)
 	}
-}
-
-func assertName(t *testing.T, expected, actual string) {
-	if expected != actual {
-		t.Errorf("Expected name %v but was %v", actual, expected)
-	}
-}
-
-func assertLine(t *testing.T, expected, actual int) {
-	if expected != actual {
-		t.Errorf("Expected line %v but was %v", expected, actual)
+	if e.Object != a.Object {
+		t.Errorf("Expected object %v but was %v", e.Object, a.Object)
 	}
 }
 
@@ -43,9 +34,10 @@ func TestParsingOfFunctions(t *testing.T) {
 	e = o.Parse(c)
 
 	assertLen(t, len(o.Functions), 1)
-	f := &o.Functions[0]
-	assertName(t, f.Name, "Exported")
-	assertLine(t, f.Line, 2)
+	o.Functions[0].assert(t, &Symbol{
+		Name: "Exported",
+		Line: 2,
+	})
 }
 
 func TestParsingOfStructs(t *testing.T) {
@@ -57,9 +49,10 @@ func TestParsingOfStructs(t *testing.T) {
 	e = o.Parse(c)
 
 	assertLen(t, len(o.Structs), 1)
-	s := &o.Structs[0]
-	assertName(t, s.Name, "AStruct")
-	assertLine(t, s.Line, 2)
+	o.Structs[0].assert(t, &Symbol{
+		Name: "AStruct",
+		Line: 2,
+	})
 }
 
 func TestParsingOfMethods(t *testing.T) {
@@ -77,10 +70,14 @@ func TestParsingOfMethods(t *testing.T) {
 	e = o.Parse(c)
 
 	assertLen(t, 2, len(o.Methods))
-	m := &o.Methods[0]
-	m.assert(t, &Symbol{
-		Name: "ExportedOnAStruct",
-		Line: 6,
+	o.Methods[0].assert(t, &Symbol{
+		Name:   "ExportedOnAStruct",
+		Line:   6,
+		Object: "AStruct",
 	})
-	assertName(t, m.Object, "AStruct")
+	o.Methods[1].assert(t, &Symbol{
+		Name:   "ExportedOnAStructPtr",
+		Line:   9,
+		Object: "AStruct",
+	})
 }
