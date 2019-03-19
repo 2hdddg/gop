@@ -2,7 +2,7 @@ package client
 
 import (
 	"fmt"
-	"github.com/2hdddg/gop/shared"
+	"github.com/2hdddg/gop/config"
 	"go/parser"
 	"go/token"
 	"path/filepath"
@@ -25,7 +25,7 @@ func parseFileImports(path string) (packs []string, e error) {
 	return packs, nil
 }
 
-func parseFilePackage(config *shared.Config,
+func parseFilePackage(config *config.Config,
 	path string) (pack string, e error) {
 	p, _ := filepath.Abs(path)
 	p = filepath.Dir(p)
