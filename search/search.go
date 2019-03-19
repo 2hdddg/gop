@@ -66,7 +66,9 @@ func (res *Response) add(hits []*index.Hit, descr string) {
 }
 
 func (s *Service) service() {
-	var i index.Index
+	var i *index.Index
+
+	indexChan := make(chan *index.Index)
 
 	log.Println("Started search service")
 
@@ -74,14 +76,28 @@ func (s *Service) service() {
 		select {
 		case m := <-s.treeChan:
 			log.Println("Got new/updated tree")
-			i = index.Build(m.tree)
-			m.ackChan <- ackMsg{}
+			go func() {
+				indexChan <- index.Build(m.tree)
+				m.ackChan <- ackMsg{}
+			}()
+		case m := <-indexChan:
+			// Received index built in go routine above.
+			i = m
 		case m := <-s.reqChan:
-			res := i.Query(&index.Query{Name: m.clientReq.Name})
-			m.clientRes.add(res.Functions, "Function")
-			m.clientRes.add(res.Methods, "Method")
-
-			m.ackChan <- ackMsg{}
+			// Serve search request
+			if i != nil {
+				// Use pointer to curr index in case of index is rebuilt
+				// while go func is running.
+				go func(ii *index.Index) {
+					res := ii.Query(&index.Query{Name: m.clientReq.Name})
+					m.clientRes.add(res.Functions, "Function")
+					m.clientRes.add(res.Methods, "Method")
+					m.ackChan <- ackMsg{}
+				}(i)
+			} else {
+				// No index, yet?
+				m.ackChan <- ackMsg{}
+			}
 		}
 	}
 }
@@ -98,6 +114,15 @@ func (s *Service) NewOrUpdatedTree(t *tree.Tree) {
 		ackChan: ackChan,
 	}
 	<-ackChan
+}
+
+// Implements tree Progress interface
+func (s *Service) OnPackageParsed(t *tree.Tree, p *tree.Package) {
+}
+
+// Implements tree Progress interface
+func (s *Service) OnTreeParsed(t *tree.Tree) {
+	s.NewOrUpdatedTree(t)
 }
 
 func (c *Client) Search(req *Request, res *Response) error {

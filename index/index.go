@@ -83,7 +83,7 @@ func (i *Index) traverse(p *tree.Package) {
 	}
 }
 
-func Build(tree *tree.Tree) Index {
+func Build(tree *tree.Tree) *Index {
 	i := Index{
 		rootPath:  tree.Path,
 		functions: map[string][]*Hit{},
@@ -92,7 +92,7 @@ func Build(tree *tree.Tree) Index {
 	for _, p := range tree.Packs {
 		i.traverse(p)
 	}
-	return i
+	return &i
 }
 
 func (i *Index) Query(q *Query) *Result {
