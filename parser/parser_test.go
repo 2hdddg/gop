@@ -1,11 +1,7 @@
 package parser
 
-import "testing"
-
-var (
-	o *Symbols
-	e error
-	c string
+import (
+	"testing"
 )
 
 func assertLen(t *testing.T, expected, actual int) {
@@ -27,11 +23,11 @@ func (a *Symbol) assert(t *testing.T, e *Symbol) {
 }
 
 func TestParsingOfFunctions(t *testing.T) {
-	o = NewSymbols()
-	c = `package x
+	o := NewSymbols()
+	c := `package x
 		func Exported() {
 		}`
-	e = o.Parse(c)
+	_ = o.Parse(c)
 
 	assertLen(t, len(o.Functions), 1)
 	o.Functions[0].assert(t, &Symbol{
@@ -41,12 +37,12 @@ func TestParsingOfFunctions(t *testing.T) {
 }
 
 func TestParsingOfStructs(t *testing.T) {
-	o = NewSymbols()
-	c = `package x
+	o := NewSymbols()
+	c := `package x
 		type AStruct struct {
 			s string
 		}`
-	e = o.Parse(c)
+	_ = o.Parse(c)
 
 	assertLen(t, len(o.Structs), 1)
 	o.Structs[0].assert(t, &Symbol{
@@ -56,8 +52,8 @@ func TestParsingOfStructs(t *testing.T) {
 }
 
 func TestParsingOfMethods(t *testing.T) {
-	o = NewSymbols()
-	c = `package x
+	o := NewSymbols()
+	c := `package x
 		type AStruct struct {
 			s string
 		}
@@ -67,7 +63,7 @@ func TestParsingOfMethods(t *testing.T) {
 
 		func (a *AStruct) ExportedOnAStructPtr() {
 		}`
-	e = o.Parse(c)
+	_ = o.Parse(c)
 
 	assertLen(t, 2, len(o.Methods))
 	o.Methods[0].assert(t, &Symbol{
@@ -80,4 +76,22 @@ func TestParsingOfMethods(t *testing.T) {
 		Line:   9,
 		Object: "AStruct",
 	})
+}
+
+func TestParsingOfImports(t *testing.T) {
+	c := `package x
+		  import (
+			"main/sub"
+			"another"
+		  )
+		}`
+	imports, _ := parseImports(c)
+	assertLen(t, 2, len(imports))
+	expected := []string{"main/sub", "another"}
+	for i, v := range imports {
+		if v != expected[i] {
+			t.Errorf("Expected %v but was %v", expected, i)
+			break
+		}
+	}
 }

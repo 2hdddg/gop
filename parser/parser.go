@@ -6,6 +6,7 @@ import (
 	"go/token"
 	"io/ioutil"
 	"log"
+	"strconv"
 )
 
 type Symbol struct {
@@ -110,14 +111,46 @@ func (o *Symbols) Parse(code string) error {
 	return nil
 }
 
-func Parse(path string) (*Symbols, error) {
+func parseImports(code string) ([]string, error) {
+	fset := token.NewFileSet()
+	f, err := parser.ParseFile(fset, "", code, parser.ImportsOnly)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	imps := make([]string, len(f.Imports))
+	for x, i := range f.Imports {
+		name, _ := strconv.Unquote(i.Path.Value)
+		imps[x] = name
+	}
+	return imps, nil
+}
+
+func getCode(path string) (string, error) {
 	buf, err := ioutil.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	return string(buf), nil
+}
+
+func Parse(path string) (*Symbols, error) {
+	code, err := getCode(path)
 	if err != nil {
 		return nil, err
 	}
-	code := string(buf)
 	symbols := NewSymbols()
 	symbols.Parse(code)
 
 	return symbols, nil
+}
+
+func ParseImports(path string) ([]string, error) {
+	code, err := getCode(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return parseImports(code)
 }
