@@ -5,6 +5,7 @@ package search
 import (
 	"log"
 
+	"github.com/2hdddg/gop/config"
 	"github.com/2hdddg/gop/index"
 	"github.com/2hdddg/gop/tree"
 )
@@ -21,7 +22,9 @@ type Client struct {
 
 // Exposed over RPC
 type Request struct {
-	Name string
+	Name    string
+	Imports []string
+	Config  config.Config
 }
 
 // Exposed over RPC

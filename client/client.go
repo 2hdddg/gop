@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/2hdddg/gop/config"
+	"github.com/2hdddg/gop/parser"
 	"github.com/2hdddg/gop/search"
 )
 
@@ -41,15 +42,24 @@ func invoke(client *rpc.Client, req *search.Request) {
 }
 
 func Run(config *config.Config, port int, params *Params) {
+	imports := []string{}
 
 	client, err := connectToServer(port)
 	if err != nil {
 		log.Fatalf("Failed to connect to server: %s", err)
 	}
 
+	if params.FilePath != "" {
+		imports, err = parser.ParseImports(params.FilePath)
+		if err != nil {
+			log.Fatalf("Unable to parse imports from: %s", params.FilePath)
+		}
+	}
+
 	req := &search.Request{
-		//Config: config,
-		Name: params.Name,
+		Config:  *config,
+		Name:    params.Name,
+		Imports: imports,
 	}
 
 	invoke(client, req)
