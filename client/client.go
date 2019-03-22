@@ -54,6 +54,10 @@ func Run(config *config.Config, port int, params *Params) {
 		if err != nil {
 			log.Fatalf("Unable to parse imports from: %s", params.FilePath)
 		}
+		curr, ok := config.PackageFromPath(params.FilePath)
+		if ok {
+			imports = append(imports, curr)
+		}
 	}
 
 	req := &search.Request{

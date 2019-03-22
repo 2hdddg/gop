@@ -4,7 +4,9 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 type Config struct {
@@ -51,4 +53,18 @@ func (c *Config) Valid() bool {
 	}
 
 	return true
+}
+
+func (c *Config) PackageFromPath(path string) (string, bool) {
+	prefixes := []string{c.WorkspacePath, c.SystemPath}
+
+	path, _ = filepath.Abs(filepath.Dir(path))
+	for _, prefix := range prefixes {
+		if prefix != "" && strings.HasPrefix(path, prefix) {
+			pack := strings.TrimPrefix(path, prefix)
+			pack = strings.TrimPrefix(pack, "/")
+			return pack, true
+		}
+	}
+	return "", false
 }
