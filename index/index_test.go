@@ -75,4 +75,18 @@ func TestBuildAndQueryBaseline(t *testing.T) {
 		Filename: "thefile",
 		Line:     666,
 	})
+
+	// Same data but with query that specifies imports, should limit
+	// result to imported packages.
+	q.Imported = []string{"another_pack"}
+	res = i.Query(q)
+	if len(res.Functions) != 0 {
+		t.Errorf("Query with import scope should return 0 func")
+	}
+	// And now the "correct" package
+	q.Imported = []string{"pack"}
+	res = i.Query(q)
+	if len(res.Functions) != 1 {
+		t.Errorf("Query with import scope should return 1 func")
+	}
 }

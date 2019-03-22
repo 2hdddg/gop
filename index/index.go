@@ -95,9 +95,30 @@ func Build(tree *tree.Tree) *Index {
 	return &i
 }
 
+func importFilter(hits []*Hit, imported []string) []*Hit {
+	filtered := hits[:0]
+	for _, h := range hits {
+		for _, i := range imported {
+			if h.Package.Name == i {
+				filtered = append(filtered, h)
+				continue
+			}
+		}
+	}
+	return filtered
+}
+
 func (i *Index) Query(q *Query) *Result {
+	funcs := i.functions[q.Name]
+	meths := i.methods[q.Name]
+
+	if len(q.Imported) > 0 {
+		funcs = importFilter(funcs, q.Imported)
+		meths = importFilter(meths, q.Imported)
+	}
+
 	return &Result{
-		Functions: i.functions[q.Name],
-		Methods:   i.methods[q.Name],
+		Functions: funcs,
+		Methods:   meths,
 	}
 }

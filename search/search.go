@@ -92,7 +92,9 @@ func (s *Service) service() {
 				// Use pointer to curr index in case of index is rebuilt
 				// while go func is running.
 				go func(ii *index.Index) {
-					res := ii.Query(&index.Query{Name: m.clientReq.Name})
+					q := index.NewQuery(m.clientReq.Name)
+					q.Imported = m.clientReq.Imports
+					res := ii.Query(q)
 					m.clientRes.add(res.Functions, "Function")
 					m.clientRes.add(res.Methods, "Method")
 					m.ackChan <- ackMsg{}
