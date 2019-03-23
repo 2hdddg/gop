@@ -28,6 +28,7 @@ type Index struct {
 	functions map[string][]*Hit
 	methods   map[string][]*Hit
 	structs   map[string][]*Hit
+	interfs   map[string][]*Hit
 }
 
 type Query struct {
@@ -36,9 +37,10 @@ type Query struct {
 }
 
 type Result struct {
-	Functions []*Hit
-	Methods   []*Hit
-	Structs   []*Hit
+	Functions  []*Hit
+	Methods    []*Hit
+	Structs    []*Hit
+	Interfaces []*Hit
 }
 
 func NewQuery(name string) *Query {
@@ -48,12 +50,12 @@ func NewQuery(name string) *Query {
 	}
 }
 
-func toHit(p *Package, f *tree.File, s *parser.Symbol) *Hit {
+func toHit(p *Package, f *tree.File, s *parser.Symbol, e string) *Hit {
 	return &Hit{
 		Package:  p,
 		Filename: f.Name,
 		Line:     s.Line,
-		Extra:    s.Object,
+		Extra:    e,
 	}
 }
 
@@ -70,13 +72,20 @@ func (i *Index) add(p *tree.Package) {
 	}
 	for _, f := range p.Files {
 		for _, s := range f.Syms.Functions {
-			appendToMap(s.Name, toHit(ip, f, &s), i.functions)
+			appendToMap(s.Name,
+				toHit(ip, f, &s, " func"), i.functions)
 		}
 		for _, s := range f.Syms.Methods {
-			appendToMap(s.Name, toHit(ip, f, &s), i.methods)
+			appendToMap(s.Name,
+				toHit(ip, f, &s, " func@"+s.Object), i.methods)
 		}
 		for _, s := range f.Syms.Structs {
-			appendToMap(s.Name, toHit(ip, f, &s), i.structs)
+			appendToMap(s.Name,
+				toHit(ip, f, &s, " struct"), i.structs)
+		}
+		for _, s := range f.Syms.Interfaces {
+			appendToMap(s.Name,
+				toHit(ip, f, &s, " iface"), i.interfs)
 		}
 	}
 }
@@ -94,6 +103,7 @@ func Build(tree *tree.Tree) *Index {
 		functions: map[string][]*Hit{},
 		methods:   map[string][]*Hit{},
 		structs:   map[string][]*Hit{},
+		interfs:   map[string][]*Hit{},
 	}
 	for _, p := range tree.Packs {
 		i.traverse(p)
@@ -118,16 +128,19 @@ func (i *Index) Query(q *Query) *Result {
 	funcs := i.functions[q.Name]
 	meths := i.methods[q.Name]
 	structs := i.structs[q.Name]
+	interfs := i.interfs[q.Name]
 
 	if len(q.Imported) > 0 {
 		funcs = importFilter(funcs, q.Imported)
 		meths = importFilter(meths, q.Imported)
 		structs = importFilter(structs, q.Imported)
+		interfs = importFilter(interfs, q.Imported)
 	}
 
 	return &Result{
-		Functions: funcs,
-		Methods:   meths,
-		Structs:   structs,
+		Functions:  funcs,
+		Methods:    meths,
+		Structs:    structs,
+		Interfaces: interfs,
 	}
 }

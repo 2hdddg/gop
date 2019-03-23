@@ -58,12 +58,12 @@ func NewService() *Service {
 	}
 }
 
-func (res *Response) add(hits []*index.Hit, descr string) {
+func (res *Response) add(hits []*index.Hit) {
 	for _, h := range hits {
 		res.Hits = append(res.Hits, Hit{
 			Path:  h.Path(),
 			Line:  h.Line,
-			Descr: descr,
+			Descr: h.Extra,
 		})
 	}
 }
@@ -90,9 +90,10 @@ func search(req *Request, res *Response, indexmap map[string]*index.Index) {
 	for _, i := range indexes {
 		log.Printf("Searching in index %v", i.RootPath)
 		result := i.Query(q)
-		res.add(result.Functions, "Function")
-		res.add(result.Methods, "Method")
-		res.add(result.Structs, "Struct")
+		res.add(result.Functions)
+		res.add(result.Methods)
+		res.add(result.Structs)
+		res.add(result.Interfaces)
 	}
 }
 
