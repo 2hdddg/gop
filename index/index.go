@@ -24,7 +24,7 @@ func (h *Hit) Path() string {
 }
 
 type Index struct {
-	rootPath  string
+	RootPath  string
 	functions map[string][]*Hit
 	methods   map[string][]*Hit
 }
@@ -85,7 +85,7 @@ func (i *Index) traverse(p *tree.Package) {
 
 func Build(tree *tree.Tree) *Index {
 	i := Index{
-		rootPath:  tree.Path,
+		RootPath:  tree.Path,
 		functions: map[string][]*Hit{},
 		methods:   map[string][]*Hit{},
 	}
@@ -96,7 +96,7 @@ func Build(tree *tree.Tree) *Index {
 }
 
 func importFilter(hits []*Hit, imported []string) []*Hit {
-	filtered := hits[:0]
+	filtered := make([]*Hit, 0, len(hits))
 	for _, h := range hits {
 		for _, i := range imported {
 			if h.Package.Name == i {

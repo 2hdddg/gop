@@ -68,9 +68,35 @@ func (res *Response) add(hits []*index.Hit, descr string) {
 	}
 }
 
-func (s *Service) service() {
-	var i *index.Index
+func search(req *Request, res *Response, indexmap map[string]*index.Index) {
+	// Copy the needed indexes from map to list to make sure that
+	// we can return to search fast and continue the search in a
+	// go routine.
+	roots := req.Config.Paths()
+	indexes := make([]*index.Index, 0, len(roots))
+	for _, r := range roots {
+		i, exists := indexmap[r]
+		if exists {
+			indexes = append(indexes, i)
+		} else {
+			log.Printf("No index for %v", r)
+		}
+	}
 
+	// From this point it's ok to return and continue in go routine
+
+	q := index.NewQuery(req.Name)
+	q.Imported = req.Imports
+	for _, i := range indexes {
+		log.Printf("Searching in index %v", i.RootPath)
+		result := i.Query(q)
+		res.add(result.Functions, "Function")
+		res.add(result.Methods, "Method")
+	}
+}
+
+func (s *Service) service() {
+	indexes := map[string]*index.Index{}
 	indexChan := make(chan *index.Index)
 
 	log.Println("Started search service")
@@ -85,24 +111,10 @@ func (s *Service) service() {
 			}()
 		case m := <-indexChan:
 			// Received index built in go routine above.
-			i = m
+			indexes[m.RootPath] = m
 		case m := <-s.reqChan:
-			// Serve search request
-			if i != nil {
-				// Use pointer to curr index in case of index is rebuilt
-				// while go func is running.
-				go func(ii *index.Index) {
-					q := index.NewQuery(m.clientReq.Name)
-					q.Imported = m.clientReq.Imports
-					res := ii.Query(q)
-					m.clientRes.add(res.Functions, "Function")
-					m.clientRes.add(res.Methods, "Method")
-					m.ackChan <- ackMsg{}
-				}(i)
-			} else {
-				// No index, yet?
-				m.ackChan <- ackMsg{}
-			}
+			search(m.clientReq, m.clientRes, indexes)
+			m.ackChan <- ackMsg{}
 		}
 	}
 }

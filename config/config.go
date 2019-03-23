@@ -68,3 +68,7 @@ func (c *Config) PackageFromPath(path string) (string, bool) {
 	}
 	return "", false
 }
+
+func (c *Config) Paths() []string {
+	return []string{c.SystemPath, c.WorkspacePath}
+}
