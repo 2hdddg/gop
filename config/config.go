@@ -70,5 +70,9 @@ func (c *Config) PackageFromPath(path string) (string, bool) {
 }
 
 func (c *Config) Paths() []string {
-	return []string{c.SystemPath, c.WorkspacePath}
+	paths := []string{c.SystemPath}
+	if c.WorkspacePath != "" {
+		paths = append(paths, c.WorkspacePath)
+	}
+	return paths
 }
