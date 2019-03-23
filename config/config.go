@@ -1,7 +1,8 @@
 package config
 
 import (
-	"log"
+	"errors"
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -14,45 +15,55 @@ type Config struct {
 	WorkspacePath string
 }
 
+func evalPath(in string) (p string, err error) {
+	// Path should be absolute to simplify comparisons
+	if p, err = filepath.Abs(in); err != nil {
+		return
+	}
+	// Symbolic links are followed until real target found, we
+	// should use that path instead!
+	if p, err = filepath.EvalSymlinks(p); err != nil {
+		return
+	}
+	// Should be a valid path
+	var i os.FileInfo
+	if i, err = os.Stat(p); err != nil {
+		return
+	}
+	// Should be a directory
+	if !i.IsDir() {
+		err = errors.New(fmt.Sprintf("%v is not a directory", p))
+		return
+	}
+
+	// If there is a subdir named src, use that
+	psrc := path.Join(p, "src")
+	if i, err = os.Stat(psrc); err != nil {
+		err = nil
+		return
+	}
+	if i.IsDir() {
+		p = psrc
+	}
+
+	return
+}
+
 func NewConfig() *Config {
-	system := path.Join(runtime.GOROOT(), "src")
+	system := runtime.GOROOT()
+	system, _ = evalPath(system)
+
 	// GOPATH is a list of paths (colon-separated on Unix)
 	// TODO: Handle multiple paths!
 	workspace := os.Getenv("GOPATH")
 	if workspace != "" {
-		workspace = path.Join(workspace, "src")
+		workspace, _ = evalPath(workspace)
 	}
 
 	return &Config{
 		WorkspacePath: workspace,
 		SystemPath:    system,
 	}
-}
-
-func (c *Config) Valid() bool {
-	if c.SystemPath == "" {
-		return false
-	}
-
-	// Should be a valid GOROOT directory. Doesn't make sense
-	// when this isn't valid..
-	info, err := os.Stat(c.SystemPath)
-	if err != nil || !info.IsDir() {
-		log.Printf("Invalid GOROOT: %s", c.SystemPath)
-		return false
-	}
-
-	// Optional if GOPATH is set or not, could be added later
-	// or workspace will not be searchable.
-	if c.WorkspacePath != "" {
-		info, err = os.Stat(c.WorkspacePath)
-		if err != nil || !info.IsDir() {
-			log.Printf("Invalid GOPATH: %s", c.WorkspacePath)
-			return false
-		}
-	}
-
-	return true
 }
 
 func (c *Config) PackageFromPath(path string) (string, bool) {
