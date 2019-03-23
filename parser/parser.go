@@ -10,16 +10,19 @@ import (
 )
 
 type Symbol struct {
-	Name   string
-	Line   int
-	Object string
+	Name       string
+	Line       int
+	Object     string // Name of struct for methods
+	ObjectKind string // Struct, Interface
 }
 
 type Symbols struct {
-	Functions  []Symbol
-	Methods    []Symbol
+	Functions  []Symbol // Global, on struct
+	Methods    []Symbol // Remove?
 	Structs    []Symbol
 	Interfaces []Symbol
+	//Vars	global,
+	// Member of struct, interface
 }
 
 func NewSymbols() *Symbols {

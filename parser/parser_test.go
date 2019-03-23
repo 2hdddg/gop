@@ -24,7 +24,7 @@ func TestParse(t *testing.T) {
 				}`,
 			Symbols{
 				Functions: []Symbol{
-					{"Exported", 2, ""},
+					{"Exported", 2, "", ""},
 				},
 			},
 			nil,
@@ -37,7 +37,7 @@ func TestParse(t *testing.T) {
 				}`,
 			Symbols{
 				Structs: []Symbol{
-					{"AStruct", 2, ""},
+					{"AStruct", 2, "", ""},
 				},
 			},
 			nil,
@@ -56,11 +56,11 @@ func TestParse(t *testing.T) {
 				}`,
 			Symbols{
 				Methods: []Symbol{
-					{"ExportedOnAStruct", 6, "AStruct"},
-					{"ExportedOnAStructPtr", 9, "AStruct"},
+					{"ExportedOnAStruct", 6, "AStruct", ""},
+					{"ExportedOnAStructPtr", 9, "AStruct", ""},
 				},
 				Structs: []Symbol{
-					{"AStruct", 2, ""},
+					{"AStruct", 2, "", ""},
 				},
 			},
 			nil,
@@ -73,7 +73,7 @@ func TestParse(t *testing.T) {
 			}`,
 			Symbols{
 				Interfaces: []Symbol{
-					{"AInterface", 2, ""},
+					{"AInterface", 2, "", ""},
 				},
 			},
 			nil,
