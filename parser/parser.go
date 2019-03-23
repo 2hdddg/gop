@@ -16,16 +16,18 @@ type Symbol struct {
 }
 
 type Symbols struct {
-	Functions []Symbol
-	Methods   []Symbol
-	Structs   []Symbol
+	Functions  []Symbol
+	Methods    []Symbol
+	Structs    []Symbol
+	Interfaces []Symbol
 }
 
 func NewSymbols() *Symbols {
 	return &Symbols{
-		Functions: make([]Symbol, 0),
-		Methods:   make([]Symbol, 0),
-		Structs:   make([]Symbol, 0),
+		Functions:  make([]Symbol, 0),
+		Methods:    make([]Symbol, 0),
+		Structs:    make([]Symbol, 0),
+		Interfaces: make([]Symbol, 0),
 	}
 }
 
@@ -73,11 +75,17 @@ func (o *Symbols) fun(fs *token.FileSet, f *ast.FuncDecl) {
 func (o *Symbols) typ(fs *token.FileSet, s *ast.TypeSpec) {
 	switch s.Type.(type) {
 	case *ast.StructType:
-		// Struct
 		o.Structs = append(o.Structs, Symbol{
 			Name: s.Name.Name,
 			Line: linenumber(fs, s),
 		})
+	case *ast.InterfaceType:
+		o.Interfaces = append(o.Interfaces, Symbol{
+			Name: s.Name.Name,
+			Line: linenumber(fs, s),
+		})
+	default:
+		log.Printf("Unknown type: %T", s.Type)
 	}
 }
 
@@ -100,7 +108,7 @@ func (o *Symbols) Parse(code string) error {
 				case *ast.TypeSpec:
 					o.typ(fset, it)
 				default:
-					//log.Printf("Unknown spec: %T", spec)
+					log.Printf("Unknown spec: %T", spec)
 				}
 			}
 		default:

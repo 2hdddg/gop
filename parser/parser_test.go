@@ -10,72 +10,119 @@ func assertLen(t *testing.T, expected, actual int) {
 	}
 }
 
-func (a *Symbol) assert(t *testing.T, e *Symbol) {
-	if e.Name != a.Name {
-		t.Errorf("Expected name %v but was %v", e.Name, a.Name)
+func TestParse(t *testing.T) {
+	cases := []struct {
+		desc string
+		code string
+		syms Symbols
+		err  error
+	}{
+		{
+			"Exported func",
+			`package x
+				func Exported() {
+				}`,
+			Symbols{
+				Functions: []Symbol{
+					{"Exported", 2, ""},
+				},
+			},
+			nil,
+		},
+		{
+			"Exported struct",
+			`package x
+				type AStruct struct {
+					s string
+				}`,
+			Symbols{
+				Structs: []Symbol{
+					{"AStruct", 2, ""},
+				},
+			},
+			nil,
+		},
+		{
+			"Methods on struct",
+			`package x
+				type AStruct struct {
+					s string
+				}
+
+				func (a AStruct) ExportedOnAStruct() {
+				}
+
+				func (a *AStruct) ExportedOnAStructPtr() {
+				}`,
+			Symbols{
+				Methods: []Symbol{
+					{"ExportedOnAStruct", 6, "AStruct"},
+					{"ExportedOnAStructPtr", 9, "AStruct"},
+				},
+				Structs: []Symbol{
+					{"AStruct", 2, ""},
+				},
+			},
+			nil,
+		},
+		{
+			"Exported interface",
+			`package x
+			type AInterface interface {
+				Meth(x string)
+			}`,
+			Symbols{
+				Interfaces: []Symbol{
+					{"AInterface", 2, ""},
+				},
+			},
+			nil,
+		},
 	}
-	if e.Line != a.Line {
-		t.Errorf("Expected line %v but was %v", e.Line, a.Line)
-	}
-	if e.Object != a.Object {
-		t.Errorf("Expected object %v but was %v", e.Object, a.Object)
-	}
-}
 
-func TestParsingOfFunctions(t *testing.T) {
-	o := NewSymbols()
-	c := `package x
-		func Exported() {
-		}`
-	_ = o.Parse(c)
-
-	assertLen(t, len(o.Functions), 1)
-	o.Functions[0].assert(t, &Symbol{
-		Name: "Exported",
-		Line: 2,
-	})
-}
-
-func TestParsingOfStructs(t *testing.T) {
-	o := NewSymbols()
-	c := `package x
-		type AStruct struct {
-			s string
-		}`
-	_ = o.Parse(c)
-
-	assertLen(t, len(o.Structs), 1)
-	o.Structs[0].assert(t, &Symbol{
-		Name: "AStruct",
-		Line: 2,
-	})
-}
-
-func TestParsingOfMethods(t *testing.T) {
-	o := NewSymbols()
-	c := `package x
-		type AStruct struct {
-			s string
+	assertSymbol := func(desc string, a, e *Symbol) {
+		if a.Name != e.Name {
+			t.Errorf("%s: Expected symbol name %v but was %v (%v)",
+				desc, e.Name, a.Name, a)
 		}
+		if a.Line != e.Line {
+			t.Errorf("%s: Expected symbol line %v but was %v (%v)",
+				desc, e.Line, a.Line, a)
+		}
+		if a.Object != e.Object {
+			t.Errorf("%s: Expected symbol object %v but was %v (%v)",
+				desc, e.Object, a.Object, a)
+		}
+	}
 
-		func (a AStruct) ExportedOnAStruct() {
-		} 
+	assertSymbols := func(desc, objtype string, a, e []Symbol) {
+		if len(a) != len(e) {
+			t.Errorf("%s: Expected %v number of %v but was %v",
+				desc, len(e), objtype, len(a))
+			return
+		}
+		for i, m := range a {
+			assertSymbol(desc, &m, &e[i])
+		}
+	}
 
-		func (a *AStruct) ExportedOnAStructPtr() {
-		}`
-	_ = o.Parse(c)
+	for _, c := range cases {
+		syms := NewSymbols()
+		err := syms.Parse(c.code)
 
-	assertLen(t, 2, len(o.Methods))
-	o.Methods[0].assert(t, &Symbol{
-		Name:   "ExportedOnAStruct",
-		Line:   6,
-		Object: "AStruct",
-	})
-	o.Methods[1].assert(t, &Symbol{
-		Name:   "ExportedOnAStructPtr",
-		Line:   9,
-		Object: "AStruct",
-	})
+		if err != c.err {
+			t.Errorf("%s: Expected error to be %v but was %v",
+				c.desc, c.err, err)
+		}
+		assertSymbols(c.desc, "methods",
+			syms.Methods, c.syms.Methods)
+		assertSymbols(c.desc, "funcs",
+			syms.Functions, c.syms.Functions)
+		assertSymbols(c.desc, "structs",
+			syms.Structs, c.syms.Structs)
+		assertSymbols(c.desc, "interfaces",
+			syms.Interfaces, c.syms.Interfaces)
+	}
 }
 
 func TestParsingOfImports(t *testing.T) {
