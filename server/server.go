@@ -12,6 +12,15 @@ import (
 	"strconv"
 )
 
+func build(path string, progress tree.Progress) {
+	builder, err := tree.NewBuilder(path)
+	builder.Progress = progress
+	_, err = builder.Build()
+	if err != nil {
+		log.Fatalf("Failed to build tree: %s", err)
+	}
+}
+
 func Run(config *config.Config, port int) {
 	service := search.NewService()
 	client := service.Start()
@@ -21,18 +30,14 @@ func Run(config *config.Config, port int) {
 	}
 
 	// Build takes a while, run this in a go routine so that the
-	// server is started fast.
-	go func() {
-		builder, err := tree.NewBuilder(config.SystemPath)
-		// Report build progress to search service, this makes
-		// it possible for search service to build incomplete
-		// indexes to at least serve some results.
-		builder.Progress = service
-		_, err = builder.Build()
-		if err != nil {
-			log.Fatalf("Failed to build tree: %s", err)
-		}
-	}()
+	// server starts fast.
+	// Report build progress to search service, this makes
+	// it possible for search service to build incomplete
+	// indexes early on to be able to serve some results (but
+	// incomplete)
+	for _, root := range config.Paths() {
+		go build(root, service)
+	}
 
 	log.Printf("Starting server on port %d", port)
 	rpc.HandleHTTP()
