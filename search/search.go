@@ -92,6 +92,7 @@ func search(req *Request, res *Response, indexmap map[string]*index.Index) {
 		result := i.Query(q)
 		res.add(result.Functions, "Function")
 		res.add(result.Methods, "Method")
+		res.add(result.Structs, "Struct")
 	}
 }
 

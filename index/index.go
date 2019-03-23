@@ -27,6 +27,7 @@ type Index struct {
 	RootPath  string
 	functions map[string][]*Hit
 	methods   map[string][]*Hit
+	structs   map[string][]*Hit
 }
 
 type Query struct {
@@ -37,6 +38,7 @@ type Query struct {
 type Result struct {
 	Functions []*Hit
 	Methods   []*Hit
+	Structs   []*Hit
 }
 
 func NewQuery(name string) *Query {
@@ -73,6 +75,9 @@ func (i *Index) add(p *tree.Package) {
 		for _, s := range f.Syms.Methods {
 			appendToMap(s.Name, toHit(ip, f, &s), i.methods)
 		}
+		for _, s := range f.Syms.Structs {
+			appendToMap(s.Name, toHit(ip, f, &s), i.structs)
+		}
 	}
 }
 
@@ -88,6 +93,7 @@ func Build(tree *tree.Tree) *Index {
 		RootPath:  tree.Path,
 		functions: map[string][]*Hit{},
 		methods:   map[string][]*Hit{},
+		structs:   map[string][]*Hit{},
 	}
 	for _, p := range tree.Packs {
 		i.traverse(p)
@@ -111,14 +117,17 @@ func importFilter(hits []*Hit, imported []string) []*Hit {
 func (i *Index) Query(q *Query) *Result {
 	funcs := i.functions[q.Name]
 	meths := i.methods[q.Name]
+	structs := i.structs[q.Name]
 
 	if len(q.Imported) > 0 {
 		funcs = importFilter(funcs, q.Imported)
 		meths = importFilter(meths, q.Imported)
+		structs = importFilter(structs, q.Imported)
 	}
 
 	return &Result{
 		Functions: funcs,
 		Methods:   meths,
+		Structs:   structs,
 	}
 }
