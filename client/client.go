@@ -8,7 +8,7 @@ import (
 
 	"github.com/2hdddg/gop/config"
 	"github.com/2hdddg/gop/parser"
-	"github.com/2hdddg/gop/search"
+	"github.com/2hdddg/gop/service/search"
 )
 
 type Params struct {
@@ -29,18 +29,6 @@ func connectToServer(port int) (client *rpc.Client, err error) {
 	return client, err
 }
 
-func invoke(client *rpc.Client, req *search.Request) {
-	res := &search.Response{}
-	err := client.Call("Search.Search", req, res)
-	if err != nil {
-		log.Fatalf("Failed to call server: %s", err)
-	}
-
-	for _, h := range res.Hits {
-		fmt.Printf("%s:%d:%s\n", h.Path, h.Line, h.Descr)
-	}
-}
-
 func Run(config *config.Config, port int, params *Params) {
 	imports := []string{}
 
@@ -50,9 +38,10 @@ func Run(config *config.Config, port int, params *Params) {
 	}
 
 	if params.FilePath != "" {
-		imports, err = parser.ParseImports(params.FilePath)
+		imports, err := parser.ParseImports(params.FilePath)
 		if err != nil {
-			log.Fatalf("Unable to parse imports from: %s", params.FilePath)
+			log.Fatalf("Unable to parse imports from: %s",
+				params.FilePath)
 		}
 		curr, ok := config.PackageFromPath(params.FilePath)
 		if ok {
@@ -66,5 +55,11 @@ func Run(config *config.Config, port int, params *Params) {
 		Imports: imports,
 	}
 
-	invoke(client, req)
+	res, err := search.Search(client, req)
+	if err != nil {
+		log.Fatalf("Failed to call server: %v", err)
+	}
+	for _, h := range res.Hits {
+		fmt.Printf("%s:%d:%s\n", h.Path, h.Line, h.Descr)
+	}
 }

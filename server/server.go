@@ -2,7 +2,7 @@ package server
 
 import (
 	"github.com/2hdddg/gop/config"
-	"github.com/2hdddg/gop/search"
+	"github.com/2hdddg/gop/service/search"
 	"github.com/2hdddg/gop/tree"
 
 	"log"
@@ -23,8 +23,7 @@ func build(path string, progress tree.Progress) {
 
 func Run(config *config.Config, port int) {
 	service := search.NewService()
-	client := service.Start()
-	err := rpc.RegisterName("Search", client)
+	err := service.Start()
 	if err != nil {
 		log.Fatalf("Failed to register search service: %s", err)
 	}

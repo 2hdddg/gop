@@ -4,6 +4,7 @@ package search
 
 import (
 	"log"
+	"net/rpc"
 
 	"github.com/2hdddg/gop/config"
 	"github.com/2hdddg/gop/index"
@@ -15,8 +16,8 @@ type Service struct {
 	reqChan  chan *requestMsg
 }
 
-// RPC client
-type Client struct {
+// RPC instance
+type Instance struct {
 	reqChan chan *requestMsg
 }
 
@@ -32,6 +33,7 @@ type Response struct {
 	Hits []Hit
 }
 
+// Exposed over RPC
 type Hit struct {
 	Path  string
 	Line  int
@@ -118,9 +120,14 @@ func (s *Service) service() {
 	}
 }
 
-func (s *Service) Start() *Client {
+func (s *Service) Start() error {
+	i := &Instance{reqChan: s.reqChan}
+	err := rpc.RegisterName("Search", i)
+	if err != nil {
+		return err
+	}
 	go s.service()
-	return &Client{reqChan: s.reqChan}
+	return nil
 }
 
 func (s *Service) NewOrUpdatedTree(t *tree.Tree) {
@@ -141,9 +148,9 @@ func (s *Service) OnTreeParsed(t *tree.Tree) {
 	s.NewOrUpdatedTree(t)
 }
 
-func (c *Client) Search(req *Request, res *Response) error {
+func (i *Instance) Search(req *Request, res *Response) error {
 	ackChan := make(chan ackMsg)
-	c.reqChan <- &requestMsg{
+	i.reqChan <- &requestMsg{
 		clientReq: req,
 		clientRes: res,
 		ackChan:   ackChan,
@@ -151,4 +158,13 @@ func (c *Client) Search(req *Request, res *Response) error {
 	<-ackChan
 
 	return nil
+}
+
+// Called from RPC client. Wrapper.
+func Search(c *rpc.Client, req *Request) (*Response, error) {
+	res := &Response{}
+	if err := c.Call("Search.Search", req, res); err != nil {
+		return nil, err
+	}
+	return res, nil
 }
