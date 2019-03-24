@@ -39,6 +39,7 @@ type Query struct {
 	Imported []string
 }
 
+/*
 type Result struct {
 	Functions  []*Hit
 	Methods    []*Hit
@@ -46,6 +47,7 @@ type Result struct {
 	Interfaces []*Hit
 	Packages   []*Hit
 }
+*/
 
 func NewQuery(name string) *Query {
 	return &Query{
@@ -128,40 +130,55 @@ func Build(tree *tree.Tree) *Index {
 	return &i
 }
 
-func importFilter(hits []*Hit, imported []string) []*Hit {
-	filtered := make([]*Hit, 0, len(hits))
+func filterAndAdd(hits []*Hit, imported []string, total []*Hit) {
+	//filtered := make([]*Hit, 0, len(hits))
 	for _, h := range hits {
 		for _, i := range imported {
 			if h.Package.Name == i {
-				filtered = append(filtered, h)
+				total = append(total, h)
 				continue
 			}
 		}
 	}
-	return filtered
 }
 
-func (i *Index) Query(q *Query) *Result {
-	funcs := i.functions[q.Name]
-	meths := i.methods[q.Name]
-	structs := i.structs[q.Name]
-	interfs := i.interfs[q.Name]
-	packs := i.packs[q.Name]
-
-	if len(q.Imported) > 0 {
-		funcs = importFilter(funcs, q.Imported)
-		meths = importFilter(meths, q.Imported)
-		structs = importFilter(structs, q.Imported)
-		interfs = importFilter(interfs, q.Imported)
+func add(hits []*Hit, total []*Hit) {
+	for _, h := range hits {
+		total = append(total, h)
 	}
+}
+
+func (i *Index) Query(q *Query) []*Hit {
+	result := make([]*Hit, 0, 10)
+
+	appenderNoFilter := func(hits []*Hit) {
+		for _, h := range hits {
+			result = append(result, h)
+		}
+	}
+	appenderImportFilter := func(hits []*Hit) {
+		for _, h := range hits {
+			for _, i := range q.Imported {
+				if h.Package.Name == i {
+					result = append(result, h)
+					continue
+				}
+			}
+		}
+	}
+
+	appender := appenderNoFilter
+	if len(q.Imported) > 0 {
+		appender = appenderImportFilter
+	}
+
+	appender(i.functions[q.Name])
+	appender(i.methods[q.Name])
+	appender(i.structs[q.Name])
+	appender(i.interfs[q.Name])
+	appenderNoFilter(i.packs[q.Name])
 
 	log.Printf("Queried for %v", q.Name)
 
-	return &Result{
-		Functions:  funcs,
-		Methods:    meths,
-		Structs:    structs,
-		Interfaces: interfs,
-		Packages:   packs,
-	}
+	return result
 }

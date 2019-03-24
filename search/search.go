@@ -90,11 +90,7 @@ func search(req *Request, res *Response, indexmap map[string]*index.Index) {
 	for _, i := range indexes {
 		log.Printf("Searching in index %v", i.RootPath)
 		result := i.Query(q)
-		res.add(result.Functions)
-		res.add(result.Methods)
-		res.add(result.Structs)
-		res.add(result.Interfaces)
-		res.add(result.Packages)
+		res.add(result)
 	}
 }
 

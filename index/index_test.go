@@ -63,11 +63,11 @@ func TestBuildAndQueryBaseline(t *testing.T) {
 	}
 	res := i.Query(q)
 
-	if len(res.Functions) != 1 {
+	if len(res) != 1 {
 		t.Fatalf("Query should return 1 func")
 	}
 
-	res.Functions[0].assert(t, &Hit{
+	res[0].assert(t, &Hit{
 		Package: &Package{
 			Path: pack.Path,
 			Name: "pack",
@@ -80,13 +80,13 @@ func TestBuildAndQueryBaseline(t *testing.T) {
 	// result to imported packages.
 	q.Imported = []string{"another_pack"}
 	res = i.Query(q)
-	if len(res.Functions) != 0 {
+	if len(res) != 0 {
 		t.Errorf("Query with import scope should return 0 func")
 	}
 	// And now the "correct" package
 	q.Imported = []string{"x/pack"}
 	res = i.Query(q)
-	if len(res.Functions) != 1 {
+	if len(res) != 1 {
 		t.Errorf("Query with import scope should return 1 func")
 	}
 
@@ -94,7 +94,7 @@ func TestBuildAndQueryBaseline(t *testing.T) {
 	q.Imported = []string{} // Shouldn't matter
 	q.Name = "pack"
 	res = i.Query(q)
-	if len(res.Packages) != 1 {
+	if len(res) != 1 {
 		t.Errorf("Query for package should return 1 pack")
 	}
 }
