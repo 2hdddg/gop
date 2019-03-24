@@ -54,7 +54,7 @@ func (o *Symbols) fun(fs *token.FileSet, f *ast.FuncDecl) {
 			case *ast.Ident:
 				object = y.Name
 			default:
-				log.Printf("Unexpected *: %T", y)
+				//log.Printf("Unexpected *: %T", y)
 			}
 		default:
 			log.Printf("Unexpected: %T", x)
@@ -88,7 +88,7 @@ func (o *Symbols) typ(fs *token.FileSet, s *ast.TypeSpec) {
 			Line: linenumber(fs, s),
 		})
 	default:
-		log.Printf("Unknown type: %T", s.Type)
+		//log.Printf("Unknown type: %T", s.Type)
 	}
 }
 
@@ -111,11 +111,11 @@ func (o *Symbols) Parse(code string) error {
 				case *ast.TypeSpec:
 					o.typ(fset, it)
 				default:
-					log.Printf("Unknown spec: %T", spec)
+					//log.Printf("Unknown spec: %T", spec)
 				}
 			}
 		default:
-			log.Printf("Unknown decl: %T", d)
+			//log.Printf("Unknown decl: %T", d)
 		}
 	}
 

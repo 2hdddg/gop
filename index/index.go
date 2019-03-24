@@ -131,7 +131,6 @@ func Build(tree *tree.Tree) *Index {
 }
 
 func filterAndAdd(hits []*Hit, imported []string, total []*Hit) {
-	//filtered := make([]*Hit, 0, len(hits))
 	for _, h := range hits {
 		for _, i := range imported {
 			if h.Package.Name == i {
@@ -178,7 +177,8 @@ func (i *Index) Query(q *Query) []*Hit {
 	appender(i.interfs[q.Name])
 	appenderNoFilter(i.packs[q.Name])
 
-	log.Printf("Queried for %v", q.Name)
+	log.Printf("Index %v queried for '%v', %v hits",
+		i.RootPath, q.Name, len(result))
 
 	return result
 }
