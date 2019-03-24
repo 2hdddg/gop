@@ -36,14 +36,15 @@ func evalPath(in string) (p string, err error) {
 		return
 	}
 
-	// If there is a subdir named src, use that
+	// If there is a subdir named src, use that.
+	// Note that the src dir also could be a symlink.
 	psrc := path.Join(p, "src")
 	if i, err = os.Stat(psrc); err != nil {
 		err = nil
 		return
 	}
 	if i.IsDir() {
-		p = psrc
+		p, _ = filepath.EvalSymlinks(psrc)
 	}
 
 	return
