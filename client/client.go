@@ -30,15 +30,19 @@ func connectToServer(port int) (client *rpc.Client, err error) {
 }
 
 func Run(config *config.Config, port int, params *Params) {
-	imports := []string{}
+	var imports []string
 
 	client, err := connectToServer(port)
 	if err != nil {
 		log.Fatalf("Failed to connect to server: %s", err)
 	}
 
+	// If a file is specified, parse it to extract context for
+	// improved search precision.
+	// List of imported packages is extracted to limit result
+	// to those packages.
 	if params.FilePath != "" {
-		imports, err := parser.ParseImports(params.FilePath)
+		imports, err = parser.ParseImports(params.FilePath)
 		if err != nil {
 			log.Fatalf("Unable to parse imports from: %s",
 				params.FilePath)
@@ -54,11 +58,12 @@ func Run(config *config.Config, port int, params *Params) {
 		Name:    params.Name,
 		Imports: imports,
 	}
-
 	res, err := search.Search(client, req)
 	if err != nil {
 		log.Fatalf("Failed to call server: %v", err)
 	}
+
+	// Output in grep format for vim to pickup
 	for _, h := range res.Hits {
 		fmt.Printf("%s:%d:%s\n", h.Path, h.Line, h.Descr)
 	}
