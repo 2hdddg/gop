@@ -22,8 +22,6 @@ func symsOneOfEach() *p.Symbols {
 	syms.Functions = []p.Symbol{
 		{"Func1", 666, "", ""},
 		{"Func2", 766, "", ""},
-	}
-	syms.Methods = []p.Symbol{
 		{"Method1", 100, "Struct1", "struct"},
 		{"Method2", 123, "Struct2", "struct"},
 	}

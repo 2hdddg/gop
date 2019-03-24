@@ -47,6 +47,14 @@ func NewQuery(name string) *Query {
 }
 
 func toHit(p *Package, f *tree.File, s *parser.Symbol, e string) *Hit {
+	if s.Parent != "" {
+		e += "(" + s.Parent
+		if s.ParentKind != "" {
+			e += " " + s.ParentKind
+		}
+		e += ")"
+	}
+
 	return &Hit{
 		Package:  p,
 		Filename: f.Name,
@@ -70,10 +78,6 @@ func (i *Index) add(p *tree.Package) {
 		for _, s := range f.Syms.Functions {
 			appendToMap(s.Name,
 				toHit(ip, f, &s, " func"), i.functions)
-		}
-		for _, s := range f.Syms.Methods {
-			appendToMap(s.Name,
-				toHit(ip, f, &s, " func@"+s.Object), i.methods)
 		}
 		for _, s := range f.Syms.Structs {
 			appendToMap(s.Name,

@@ -55,9 +55,9 @@ func TestParse(t *testing.T) {
 				func (a *AStruct) ExportedOnAStructPtr() {
 				}`,
 			Symbols{
-				Methods: []Symbol{
+				Functions: []Symbol{
 					{"ExportedOnAStruct", 6, "AStruct", ""},
-					{"ExportedOnAStructPtr", 9, "AStruct", ""},
+					{"ExportedOnAStructPtr", 9, "*AStruct", ""},
 				},
 				Structs: []Symbol{
 					{"AStruct", 2, "", ""},
@@ -89,9 +89,9 @@ func TestParse(t *testing.T) {
 			t.Errorf("%s: Expected symbol line %v but was %v (%v)",
 				desc, e.Line, a.Line, a)
 		}
-		if a.Object != e.Object {
-			t.Errorf("%s: Expected symbol object %v but was %v (%v)",
-				desc, e.Object, a.Object, a)
+		if a.Parent != e.Parent {
+			t.Errorf("%s: Expected symbol parent %v but was %v (%v)",
+				desc, e.Parent, a.Parent, a)
 		}
 	}
 
@@ -115,7 +115,7 @@ func TestParse(t *testing.T) {
 				c.desc, c.err, err)
 		}
 		assertSymbols(c.desc, "methods",
-			syms.Methods, c.syms.Methods)
+			syms.Functions, c.syms.Functions)
 		assertSymbols(c.desc, "funcs",
 			syms.Functions, c.syms.Functions)
 		assertSymbols(c.desc, "structs",

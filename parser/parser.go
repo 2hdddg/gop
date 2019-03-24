@@ -12,13 +12,12 @@ import (
 type Symbol struct {
 	Name       string
 	Line       int
-	Object     string // Name of struct for methods
-	ObjectKind string // Struct, Interface
+	Parent     string // Name of struct for methods or members of struct
+	ParentKind string // Struct, Interface
 }
 
 type Symbols struct {
 	Functions  []Symbol // Global, on struct
-	Methods    []Symbol // Remove?
 	Structs    []Symbol
 	Interfaces []Symbol
 	//Vars	global,
@@ -28,7 +27,6 @@ type Symbols struct {
 func NewSymbols() *Symbols {
 	return &Symbols{
 		Functions:  make([]Symbol, 0),
-		Methods:    make([]Symbol, 0),
 		Structs:    make([]Symbol, 0),
 		Interfaces: make([]Symbol, 0),
 	}
@@ -45,24 +43,24 @@ func (o *Symbols) fun(fs *token.FileSet, f *ast.FuncDecl) {
 			log.Println("Unexpected")
 		}
 		field := f.Recv.List[0]
-		object := ""
+		parent := ""
 		switch x := field.Type.(type) {
 		case *ast.Ident:
-			object = x.Name
+			parent = x.Name
 		case *ast.StarExpr:
 			switch y := x.X.(type) {
 			case *ast.Ident:
-				object = y.Name
+				parent = "*" + y.Name
 			default:
 				//log.Printf("Unexpected *: %T", y)
 			}
 		default:
 			log.Printf("Unexpected: %T", x)
 		}
-		o.Methods = append(o.Methods, Symbol{
+		o.Functions = append(o.Functions, Symbol{
 			Name:   f.Name.Name,
 			Line:   linenumber(fs, f),
-			Object: object,
+			Parent: parent,
 		})
 
 		return
