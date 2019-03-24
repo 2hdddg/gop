@@ -1,100 +1,129 @@
 package index
 
 import (
+	"fmt"
 	"testing"
 
-	"github.com/2hdddg/gop/parser"
+	p "github.com/2hdddg/gop/parser"
 	"github.com/2hdddg/gop/tree"
 )
 
 type ParserFake struct {
-	syms *parser.Symbols
+	syms *p.Symbols
 	err  error
 }
 
-func (p *ParserFake) Parse(path string) (*parser.Symbols, error) {
+func (p *ParserFake) Parse(path string) (*p.Symbols, error) {
 	return p.syms, p.err
 }
 
-func (e *Hit) assert(t *testing.T, a *Hit) {
-	if e.Filename != a.Filename {
-		t.Errorf("Expected Hit filename to be %v but was %v",
-			e.Filename, a.Filename)
+func symsOneOfEach() *p.Symbols {
+	syms := p.NewSymbols()
+	syms.Functions = []p.Symbol{
+		{"Func1", 666, "", ""},
+		{"Func2", 766, "", ""},
 	}
-	if e.Line != a.Line {
-		t.Errorf("Expected Hit line to be %v but was %v",
-			e.Line, a.Line)
+	syms.Methods = []p.Symbol{
+		{"Method1", 100, "Struct1", "struct"},
+		{"Method2", 123, "Struct2", "struct"},
 	}
-	if e.Path() != a.Path() {
-		t.Errorf("Expeced Hit path to be %v but was %v",
-			e.Path(), a.Path())
+	syms.Structs = []p.Symbol{
+		{"Struct1", 50, "", ""},
+		{"Struct2", 60, "", ""},
 	}
+	syms.Interfaces = []p.Symbol{
+		{"Interface1", 75, "", ""},
+		{"Interface2", 75, "", ""},
+	}
+	return syms
 }
 
-// Covers base functionality by having a really simple tree
-// and simple query.
-func TestBuildAndQueryBaseline(t *testing.T) {
-	// Initialize parser to return nothing
-	pars := &ParserFake{
-		syms: parser.NewSymbols(),
-		err:  nil,
-	}
-	// Setup parser result
-	s := pars.syms
-	s.Functions = append(s.Functions, parser.Symbol{
-		Name: "Func1",
-		Line: 666,
-	})
-
-	// Build tree with parsed data
-	tree, err := tree.NewTree(".")
+func TestIndexQuery(t *testing.T) {
+	// Tree
+	tree, err := tree.NewTree("/")
 	if err != nil {
 		t.Fatalf("Failed to create tree: %v", err)
 	}
-	pack := tree.AddPackage("x/pack")
-	_, _ = pack.AddFile("thefile", pars)
+
+	// Add packages
+	pack1 := tree.AddPackage("x/pack1")
+	pack2 := tree.AddPackage("y/pack2")
+
+	// Add files
+	pars := &ParserFake{
+		syms: symsOneOfEach(),
+	}
+	// Both packages gets the same set of symbols
+	pack1.AddFile("xfile1", pars)
+	pack2.AddFile("yfile2", pars)
 
 	// Build index from tree
 	i := Build(tree)
 
-	// Query index
-	q := &Query{
-		Name: "Func1",
-	}
-	res := i.Query(q)
-
-	if len(res) != 1 {
-		t.Fatalf("Query should return 1 func")
-	}
-
-	res[0].assert(t, &Hit{
-		Package: &Package{
-			Path: pack.Path,
-			Name: "pack",
+	cases := []struct {
+		d string
+		q Query
+		s []string // filepath:line:extra
+	}{
+		{
+			"Function, no import scope",
+			Query{
+				Name: "Func1",
+			},
+			[]string{
+				"/x/pack1/xfile1:666: func",
+				"/y/pack2/yfile2:666: func",
+			},
 		},
-		Filename: "thefile",
-		Line:     666,
-	})
-
-	// Same data but with query that specifies imports, should limit
-	// result to imported packages.
-	q.Imported = []string{"another_pack"}
-	res = i.Query(q)
-	if len(res) != 0 {
-		t.Errorf("Query with import scope should return 0 func")
+		{
+			"Function, import scope",
+			Query{
+				Name:     "Func1",
+				Imported: []string{"y/pack2"},
+			},
+			[]string{
+				"/y/pack2/yfile2:666: func",
+			},
+		},
+		{
+			"No hit",
+			Query{
+				Name: "xyz",
+			},
+			[]string{},
+		},
+		{
+			"Package, no scope",
+			Query{
+				Name: "pack1",
+			},
+			[]string{"/x/pack1:0: package"},
+		},
+		{
+			"Package, import scope (should not matter)",
+			Query{
+				Name:     "pack1",
+				Imported: []string{"y/pack2"},
+			},
+			[]string{"/x/pack1:0: package"},
+		},
 	}
-	// And now the "correct" package
-	q.Imported = []string{"x/pack"}
-	res = i.Query(q)
-	if len(res) != 1 {
-		t.Errorf("Query with import scope should return 1 func")
-	}
+	for _, c := range cases {
+		hits := i.Query(&c.q)
 
-	// Query for the last part of package name
-	q.Imported = []string{} // Shouldn't matter
-	q.Name = "pack"
-	res = i.Query(q)
-	if len(res) != 1 {
-		t.Errorf("Query for package should return 1 pack")
+		if len(hits) != len(c.s) {
+			t.Errorf("%s: expected %v number of hits but was %v",
+				c.d, len(c.s), len(hits))
+		}
+
+		for x, s := range c.s {
+			hit := hits[x]
+			xs := fmt.Sprintf("%s:%v:%s",
+				hit.Path(), hit.Line, hit.Extra)
+			if xs != s {
+				t.Errorf("%s: expected hit %v to be %v but was %v",
+					c.d, x, s, xs)
+			}
+		}
 	}
 }
