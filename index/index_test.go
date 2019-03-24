@@ -51,7 +51,7 @@ func TestBuildAndQueryBaseline(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create tree: %v", err)
 	}
-	pack := tree.AddPackage("pack")
+	pack := tree.AddPackage("x/pack")
 	_, _ = pack.AddFile("thefile", pars)
 
 	// Build index from tree
@@ -84,9 +84,17 @@ func TestBuildAndQueryBaseline(t *testing.T) {
 		t.Errorf("Query with import scope should return 0 func")
 	}
 	// And now the "correct" package
-	q.Imported = []string{"pack"}
+	q.Imported = []string{"x/pack"}
 	res = i.Query(q)
 	if len(res.Functions) != 1 {
 		t.Errorf("Query with import scope should return 1 func")
+	}
+
+	// Query for the last part of package name
+	q.Imported = []string{} // Shouldn't matter
+	q.Name = "pack"
+	res = i.Query(q)
+	if len(res.Packages) != 1 {
+		t.Errorf("Query for package should return 1 pack")
 	}
 }

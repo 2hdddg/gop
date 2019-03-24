@@ -94,6 +94,7 @@ func search(req *Request, res *Response, indexmap map[string]*index.Index) {
 		res.add(result.Methods)
 		res.add(result.Structs)
 		res.add(result.Interfaces)
+		res.add(result.Packages)
 	}
 }
 

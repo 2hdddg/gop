@@ -1,7 +1,9 @@
 package index
 
 import (
+	"log"
 	"path"
+	"strings"
 
 	"github.com/2hdddg/gop/parser"
 	"github.com/2hdddg/gop/tree"
@@ -29,6 +31,7 @@ type Index struct {
 	methods   map[string][]*Hit
 	structs   map[string][]*Hit
 	interfs   map[string][]*Hit
+	packs     map[string][]*Hit
 }
 
 type Query struct {
@@ -41,6 +44,7 @@ type Result struct {
 	Methods    []*Hit
 	Structs    []*Hit
 	Interfaces []*Hit
+	Packages   []*Hit
 }
 
 func NewQuery(name string) *Query {
@@ -88,6 +92,18 @@ func (i *Index) add(p *tree.Package) {
 				toHit(ip, f, &s, " iface"), i.interfs)
 		}
 	}
+
+	// Put last part of package name in index: x/y/z -> z
+	// Last part is usually what's needed from code as path.Split
+	parts := strings.Split(p.Name, "/")
+	if len(parts) >= 1 {
+		appendToMap(parts[len(parts)-1],
+			&Hit{
+				Package: ip,
+				Line:    0,
+				Extra:   " package",
+			}, i.packs)
+	}
 }
 
 func (i *Index) traverse(p *tree.Package) {
@@ -104,6 +120,7 @@ func Build(tree *tree.Tree) *Index {
 		methods:   map[string][]*Hit{},
 		structs:   map[string][]*Hit{},
 		interfs:   map[string][]*Hit{},
+		packs:     map[string][]*Hit{},
 	}
 	for _, p := range tree.Packs {
 		i.traverse(p)
@@ -129,6 +146,7 @@ func (i *Index) Query(q *Query) *Result {
 	meths := i.methods[q.Name]
 	structs := i.structs[q.Name]
 	interfs := i.interfs[q.Name]
+	packs := i.packs[q.Name]
 
 	if len(q.Imported) > 0 {
 		funcs = importFilter(funcs, q.Imported)
@@ -137,10 +155,13 @@ func (i *Index) Query(q *Query) *Result {
 		interfs = importFilter(interfs, q.Imported)
 	}
 
+	log.Printf("Queried for %v", q.Name)
+
 	return &Result{
 		Functions:  funcs,
 		Methods:    meths,
 		Structs:    structs,
 		Interfaces: interfs,
+		Packages:   packs,
 	}
 }
