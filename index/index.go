@@ -39,16 +39,6 @@ type Query struct {
 	Imported []string
 }
 
-/*
-type Result struct {
-	Functions  []*Hit
-	Methods    []*Hit
-	Structs    []*Hit
-	Interfaces []*Hit
-	Packages   []*Hit
-}
-*/
-
 func NewQuery(name string) *Query {
 	return &Query{
 		Name:     name,
