@@ -20,8 +20,7 @@ type Symbols struct {
 	Functions  []Symbol // Global, on struct
 	Structs    []Symbol
 	Interfaces []Symbol
-	//Vars	global,
-	// Member of struct, interface
+	Fields     []Symbol // Member of struct, interface
 }
 
 func NewSymbols() *Symbols {
@@ -32,8 +31,8 @@ func NewSymbols() *Symbols {
 	}
 }
 
-func linenumber(fset *token.FileSet, o ast.Node) int {
-	return fset.Position(o.Pos()).Line
+func linenumber(fset *token.FileSet, p token.Pos) int {
+	return fset.Position(p).Line
 }
 
 func (o *Symbols) fun(fs *token.FileSet, f *ast.FuncDecl) {
@@ -59,7 +58,7 @@ func (o *Symbols) fun(fs *token.FileSet, f *ast.FuncDecl) {
 		}
 		o.Functions = append(o.Functions, Symbol{
 			Name:   f.Name.Name,
-			Line:   linenumber(fs, f),
+			Line:   linenumber(fs, f.Pos()),
 			Parent: parent,
 		})
 
@@ -69,21 +68,32 @@ func (o *Symbols) fun(fs *token.FileSet, f *ast.FuncDecl) {
 	// Function
 	o.Functions = append(o.Functions, Symbol{
 		Name: f.Name.Name,
-		Line: linenumber(fs, f),
+		Line: linenumber(fs, f.Pos()),
 	})
 }
 
 func (o *Symbols) typ(fs *token.FileSet, s *ast.TypeSpec) {
-	switch s.Type.(type) {
+	switch t := s.Type.(type) {
 	case *ast.StructType:
 		o.Structs = append(o.Structs, Symbol{
 			Name: s.Name.Name,
-			Line: linenumber(fs, s),
+			Line: linenumber(fs, s.Pos()),
 		})
+		// Add members of struct
+		for _, f := range t.Fields.List {
+			if len(f.Names) > 0 {
+				o.Fields = append(o.Fields, Symbol{
+					Name:       f.Names[0].Name,
+					Line:       linenumber(fs, f.Pos()),
+					Parent:     s.Name.Name,
+					ParentKind: "struct",
+				})
+			}
+		}
 	case *ast.InterfaceType:
 		o.Interfaces = append(o.Interfaces, Symbol{
 			Name: s.Name.Name,
-			Line: linenumber(fs, s),
+			Line: linenumber(fs, s.Pos()),
 		})
 	default:
 		//log.Printf("Unknown type: %T", s.Type)

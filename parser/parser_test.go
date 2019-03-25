@@ -20,8 +20,8 @@ func TestParse(t *testing.T) {
 		{
 			"Exported func",
 			`package x
-				func Exported() {
-				}`,
+					func Exported() {
+					}`,
 			Symbols{
 				Functions: []Symbol{
 					{"Exported", 2, "", ""},
@@ -33,11 +33,14 @@ func TestParse(t *testing.T) {
 			"Exported struct",
 			`package x
 				type AStruct struct {
-					s string
+					S string
 				}`,
 			Symbols{
 				Structs: []Symbol{
 					{"AStruct", 2, "", ""},
+				},
+				Fields: []Symbol{
+					{"S", 3, "AStruct", "struct"},
 				},
 			},
 			nil,
@@ -45,15 +48,15 @@ func TestParse(t *testing.T) {
 		{
 			"Methods on struct",
 			`package x
-				type AStruct struct {
-					s string
-				}
+					type AStruct struct {
+						s string
+					}
 
-				func (a AStruct) ExportedOnAStruct() {
-				}
+					func (a AStruct) ExportedOnAStruct() {
+					}
 
-				func (a *AStruct) ExportedOnAStructPtr() {
-				}`,
+					func (a *AStruct) ExportedOnAStructPtr() {
+					}`,
 			Symbols{
 				Functions: []Symbol{
 					{"ExportedOnAStruct", 6, "AStruct", ""},
@@ -62,15 +65,18 @@ func TestParse(t *testing.T) {
 				Structs: []Symbol{
 					{"AStruct", 2, "", ""},
 				},
+				Fields: []Symbol{
+					{"s", 3, "AStruct", "struct"},
+				},
 			},
 			nil,
 		},
 		{
 			"Exported interface",
 			`package x
-			type AInterface interface {
-				Meth(x string)
-			}`,
+				type AInterface interface {
+					Meth(x string)
+				}`,
 			Symbols{
 				Interfaces: []Symbol{
 					{"AInterface", 2, "", ""},
@@ -122,6 +128,8 @@ func TestParse(t *testing.T) {
 			syms.Structs, c.syms.Structs)
 		assertSymbols(c.desc, "interfaces",
 			syms.Interfaces, c.syms.Interfaces)
+		assertSymbols(c.desc, "fields",
+			syms.Fields, c.syms.Fields)
 	}
 }
 

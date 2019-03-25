@@ -32,6 +32,7 @@ type Index struct {
 	structs   map[string][]*Hit
 	interfs   map[string][]*Hit
 	packs     map[string][]*Hit
+	fields    map[string][]*Hit
 }
 
 type Query struct {
@@ -87,6 +88,10 @@ func (i *Index) add(p *tree.Package) {
 			appendToMap(s.Name,
 				toHit(ip, f, &s, " iface"), i.interfs)
 		}
+		for _, s := range f.Syms.Fields {
+			appendToMap(s.Name,
+				toHit(ip, f, &s, " field"), i.fields)
+		}
 	}
 
 	// Put last part of package name in index: x/y/z -> z
@@ -116,6 +121,7 @@ func Build(tree *tree.Tree) *Index {
 		methods:   map[string][]*Hit{},
 		structs:   map[string][]*Hit{},
 		interfs:   map[string][]*Hit{},
+		fields:    map[string][]*Hit{},
 		packs:     map[string][]*Hit{},
 	}
 	for _, p := range tree.Packs {
@@ -169,6 +175,7 @@ func (i *Index) Query(q *Query) []*Hit {
 	appender(i.methods[q.Name])
 	appender(i.structs[q.Name])
 	appender(i.interfs[q.Name])
+	appender(i.fields[q.Name])
 	appenderNoFilter(i.packs[q.Name])
 
 	log.Printf("Index %v queried for '%v', %v hits",
