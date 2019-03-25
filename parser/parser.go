@@ -73,6 +73,20 @@ func (o *Symbols) fun(fs *token.FileSet, f *ast.FuncDecl) {
 }
 
 func (o *Symbols) typ(fs *token.FileSet, s *ast.TypeSpec) {
+
+	addFields := func(fields *ast.FieldList, pname, pkind string) {
+		for _, f := range fields.List {
+			if len(f.Names) > 0 {
+				o.Fields = append(o.Fields, Symbol{
+					Name:       f.Names[0].Name,
+					Line:       linenumber(fs, f.Pos()),
+					Parent:     pname,
+					ParentKind: pkind,
+				})
+			}
+		}
+	}
+
 	switch t := s.Type.(type) {
 	case *ast.StructType:
 		o.Structs = append(o.Structs, Symbol{
@@ -80,21 +94,14 @@ func (o *Symbols) typ(fs *token.FileSet, s *ast.TypeSpec) {
 			Line: linenumber(fs, s.Pos()),
 		})
 		// Add members of struct
-		for _, f := range t.Fields.List {
-			if len(f.Names) > 0 {
-				o.Fields = append(o.Fields, Symbol{
-					Name:       f.Names[0].Name,
-					Line:       linenumber(fs, f.Pos()),
-					Parent:     s.Name.Name,
-					ParentKind: "struct",
-				})
-			}
-		}
+		addFields(t.Fields, s.Name.Name, "struct")
 	case *ast.InterfaceType:
 		o.Interfaces = append(o.Interfaces, Symbol{
 			Name: s.Name.Name,
 			Line: linenumber(fs, s.Pos()),
 		})
+		// Add methods of interface as fields
+		addFields(t.Methods, s.Name.Name, "interface")
 	default:
 		//log.Printf("Unknown type: %T", s.Type)
 	}

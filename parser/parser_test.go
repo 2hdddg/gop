@@ -81,6 +81,9 @@ func TestParse(t *testing.T) {
 				Interfaces: []Symbol{
 					{"AInterface", 2, "", ""},
 				},
+				Fields: []Symbol{
+					{"Meth", 3, "AInterface", "interface"},
+				},
 			},
 			nil,
 		},
