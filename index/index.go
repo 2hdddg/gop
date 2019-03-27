@@ -17,8 +17,7 @@ type Package struct {
 type Hit struct {
 	Package  *Package
 	Filename string
-	Line     int
-	Extra    string // Depends on type of hit
+	Symbol   parser.Symbol
 }
 
 func (h *Hit) Path() string {
@@ -28,11 +27,10 @@ func (h *Hit) Path() string {
 type Index struct {
 	RootPath  string
 	functions map[string][]*Hit
-	methods   map[string][]*Hit
 	structs   map[string][]*Hit
 	interfs   map[string][]*Hit
-	packs     map[string][]*Hit
 	fields    map[string][]*Hit
+	packs     map[string][]*Package
 }
 
 type Query struct {
@@ -47,20 +45,11 @@ func NewQuery(name string) *Query {
 	}
 }
 
-func toHit(p *Package, f *tree.File, s *parser.Symbol, e string) *Hit {
-	if s.Parent != "" {
-		e += "(" + s.Parent
-		if s.ParentKind != "" {
-			e += " " + s.ParentKind
-		}
-		e += ")"
-	}
-
+func toHit(p *Package, f *tree.File, s *parser.Symbol) *Hit {
 	return &Hit{
 		Package:  p,
 		Filename: f.Name,
-		Line:     s.Line,
-		Extra:    e,
+		Symbol:   *s,
 	}
 }
 
@@ -76,21 +65,21 @@ func (i *Index) add(p *tree.Package) {
 		Name: p.Name,
 	}
 	for _, f := range p.Files {
-		for _, s := range f.Syms.Functions {
-			appendToMap(s.Name,
-				toHit(ip, f, &s, " func"), i.functions)
-		}
-		for _, s := range f.Syms.Structs {
-			appendToMap(s.Name,
-				toHit(ip, f, &s, " struct"), i.structs)
-		}
-		for _, s := range f.Syms.Interfaces {
-			appendToMap(s.Name,
-				toHit(ip, f, &s, " iface"), i.interfs)
-		}
-		for _, s := range f.Syms.Fields {
-			appendToMap(s.Name,
-				toHit(ip, f, &s, " field"), i.fields)
+		for _, s := range f.Syms.List {
+			h := toHit(ip, f, &s)
+			// Put in different maps for reduced size and for
+			// simpler impl of queries filtered by type.
+			switch s.Type {
+			case parser.Method:
+			case parser.Function:
+				appendToMap(s.Name, h, i.functions)
+			case parser.Struct:
+				appendToMap(s.Name, h, i.structs)
+			case parser.Interface:
+				appendToMap(s.Name, h, i.interfs)
+			case parser.Field:
+				appendToMap(s.Name, h, i.fields)
+			}
 		}
 	}
 
@@ -98,12 +87,10 @@ func (i *Index) add(p *tree.Package) {
 	// Last part is usually what's needed from code as path.Split
 	parts := strings.Split(p.Name, "/")
 	if len(parts) >= 1 {
-		appendToMap(parts[len(parts)-1],
-			&Hit{
-				Package: ip,
-				Line:    0,
-				Extra:   " package",
-			}, i.packs)
+		key := parts[len(parts)-1]
+		l := i.packs[key]
+		l = append(l, ip)
+		i.packs[key] = l
 	}
 }
 
@@ -118,11 +105,10 @@ func Build(tree *tree.Tree) *Index {
 	i := Index{
 		RootPath:  tree.Path,
 		functions: map[string][]*Hit{},
-		methods:   map[string][]*Hit{},
 		structs:   map[string][]*Hit{},
 		interfs:   map[string][]*Hit{},
 		fields:    map[string][]*Hit{},
-		packs:     map[string][]*Hit{},
+		packs:     map[string][]*Package{},
 	}
 	for _, p := range tree.Packs {
 		i.traverse(p)
@@ -147,39 +133,45 @@ func add(hits []*Hit, total []*Hit) {
 	}
 }
 
-func (i *Index) Query(q *Query) []*Hit {
-	result := make([]*Hit, 0, 10)
+type OnHit func(h Hit)
+type OnPackage func(p Package)
 
-	appenderNoFilter := func(hits []*Hit) {
+func (i *Index) Query(q *Query, onHit OnHit, onPack OnPackage) {
+	num := 0
+
+	noFilter := func(hits []*Hit) {
 		for _, h := range hits {
-			result = append(result, h)
+			onHit(*h)
+			num++
 		}
 	}
-	appenderImportFilter := func(hits []*Hit) {
+	importFilter := func(hits []*Hit) {
 		for _, h := range hits {
 			for _, i := range q.Imported {
 				if h.Package.Name == i {
-					result = append(result, h)
+					onHit(*h)
+					num++
 					continue
 				}
 			}
 		}
 	}
 
-	appender := appenderNoFilter
+	filter := noFilter
 	if len(q.Imported) > 0 {
-		appender = appenderImportFilter
+		filter = importFilter
 	}
 
-	appender(i.functions[q.Name])
-	appender(i.methods[q.Name])
-	appender(i.structs[q.Name])
-	appender(i.interfs[q.Name])
-	appender(i.fields[q.Name])
-	appenderNoFilter(i.packs[q.Name])
+	filter(i.functions[q.Name])
+	filter(i.structs[q.Name])
+	filter(i.interfs[q.Name])
+	filter(i.fields[q.Name])
+
+	for _, p := range i.packs[q.Name] {
+		onPack(*p)
+		num++
+	}
 
 	log.Printf("Index %v queried for '%v', %v hits",
-		i.RootPath, q.Name, len(result))
-
-	return result
+		i.RootPath, q.Name, num)
 }

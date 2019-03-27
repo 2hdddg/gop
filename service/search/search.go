@@ -60,16 +60,6 @@ func NewService() *Service {
 	}
 }
 
-func (res *Response) add(hits []*index.Hit) {
-	for _, h := range hits {
-		res.Hits = append(res.Hits, Hit{
-			Path:  h.Path(),
-			Line:  h.Line,
-			Descr: h.Extra,
-		})
-	}
-}
-
 func search(req *Request, res *Response, indexmap map[string]*index.Index) {
 	// Copy the needed indexes from map to list to make sure that
 	// we can return to search fast and continue the search in a
@@ -90,8 +80,21 @@ func search(req *Request, res *Response, indexmap map[string]*index.Index) {
 	q := index.NewQuery(req.Name)
 	q.Imported = req.Imports
 	for _, i := range indexes {
-		result := i.Query(q)
-		res.add(result)
+		i.Query(q,
+			func(h index.Hit) {
+				res.Hits = append(res.Hits, Hit{
+					Path:  h.Path(),
+					Line:  h.Symbol.Line,
+					Descr: h.Symbol.ToString(),
+				})
+			},
+			func(p index.Package) {
+				res.Hits = append(res.Hits, Hit{
+					Path:  p.Path,
+					Line:  0,
+					Descr: " Package",
+				})
+			})
 	}
 }
 

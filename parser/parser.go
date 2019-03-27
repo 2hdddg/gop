@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -9,30 +10,73 @@ import (
 	"strconv"
 )
 
+type Type int
+
+const (
+	Undefined Type = iota
+	Function
+	Method
+	Struct
+	Interface
+	Field
+)
+
 type Symbol struct {
-	Name       string
-	Line       int
-	Parent     string // Name of struct for methods or members of struct
-	ParentKind string // Struct, Interface
+	Name        string
+	Type        Type
+	Line        int
+	ContextName string // For Method or Field
+	ContextType Type   // For Field
 }
 
 type Symbols struct {
-	Functions  []Symbol // Global, on struct
-	Structs    []Symbol
-	Interfaces []Symbol
-	Fields     []Symbol // Member of struct, interface
+	List []Symbol
 }
 
 func NewSymbols() *Symbols {
 	return &Symbols{
-		Functions:  make([]Symbol, 0),
-		Structs:    make([]Symbol, 0),
-		Interfaces: make([]Symbol, 0),
+		List: make([]Symbol, 0, 10),
 	}
+}
+
+func typeToString(t Type) string {
+	switch t {
+	case Function:
+		return "func"
+	case Method:
+		return "func"
+	case Struct:
+		return "struct"
+	case Interface:
+		return "interface"
+	case Field:
+		return "field"
+	}
+	return fmt.Sprintf("Unknown: %v", t)
+}
+
+func (o *Symbol) ToString() string {
+	s := typeToString(o.Type)
+
+	fmt.Println(*o)
+
+	if o.ContextName != "" {
+		switch o.Type {
+		case Method:
+			return s + fmt.Sprintf(" on %v", o.ContextName)
+		case Field:
+			return s + fmt.Sprintf(" of %v(%v)", o.ContextName, typeToString(o.ContextType))
+		}
+	}
+	return s
 }
 
 func linenumber(fset *token.FileSet, p token.Pos) int {
 	return fset.Position(p).Line
+}
+
+func (o *Symbols) add(sym Symbol) {
+	o.List = append(o.List, sym)
 }
 
 func (o *Symbols) fun(fs *token.FileSet, f *ast.FuncDecl) {
@@ -42,46 +86,47 @@ func (o *Symbols) fun(fs *token.FileSet, f *ast.FuncDecl) {
 			log.Println("Unexpected")
 		}
 		field := f.Recv.List[0]
-		parent := ""
+		context := ""
 		switch x := field.Type.(type) {
 		case *ast.Ident:
-			parent = x.Name
+			context = x.Name
 		case *ast.StarExpr:
 			switch y := x.X.(type) {
 			case *ast.Ident:
-				parent = "*" + y.Name
+				context = "*" + y.Name
 			default:
 				//log.Printf("Unexpected *: %T", y)
 			}
 		default:
 			log.Printf("Unexpected: %T", x)
 		}
-		o.Functions = append(o.Functions, Symbol{
-			Name:   f.Name.Name,
-			Line:   linenumber(fs, f.Pos()),
-			Parent: parent,
+		o.add(Symbol{
+			Name:        f.Name.Name,
+			Line:        linenumber(fs, f.Pos()),
+			Type:        Method,
+			ContextName: context,
 		})
-
 		return
 	}
 
 	// Function
-	o.Functions = append(o.Functions, Symbol{
+	o.add(Symbol{
 		Name: f.Name.Name,
 		Line: linenumber(fs, f.Pos()),
+		Type: Function,
 	})
 }
 
 func (o *Symbols) typ(fs *token.FileSet, s *ast.TypeSpec) {
-
-	addFields := func(fields *ast.FieldList, pname, pkind string) {
+	addFields := func(fields *ast.FieldList, c string, t, ct Type) {
 		for _, f := range fields.List {
 			if len(f.Names) > 0 {
-				o.Fields = append(o.Fields, Symbol{
-					Name:       f.Names[0].Name,
-					Line:       linenumber(fs, f.Pos()),
-					Parent:     pname,
-					ParentKind: pkind,
+				o.add(Symbol{
+					Name:        f.Names[0].Name,
+					Line:        linenumber(fs, f.Pos()),
+					Type:        t,
+					ContextName: c,
+					ContextType: ct,
 				})
 			}
 		}
@@ -89,19 +134,21 @@ func (o *Symbols) typ(fs *token.FileSet, s *ast.TypeSpec) {
 
 	switch t := s.Type.(type) {
 	case *ast.StructType:
-		o.Structs = append(o.Structs, Symbol{
+		o.add(Symbol{
 			Name: s.Name.Name,
 			Line: linenumber(fs, s.Pos()),
+			Type: Struct,
 		})
 		// Add members of struct
-		addFields(t.Fields, s.Name.Name, "struct")
+		addFields(t.Fields, s.Name.Name, Field, Struct)
 	case *ast.InterfaceType:
-		o.Interfaces = append(o.Interfaces, Symbol{
+		o.add(Symbol{
 			Name: s.Name.Name,
 			Line: linenumber(fs, s.Pos()),
+			Type: Interface,
 		})
 		// Add methods of interface as fields
-		addFields(t.Methods, s.Name.Name, "interface")
+		addFields(t.Methods, s.Name.Name, Method, Interface)
 	default:
 		//log.Printf("Unknown type: %T", s.Type)
 	}
