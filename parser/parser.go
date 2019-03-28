@@ -63,9 +63,11 @@ func (o *Symbol) ToString() string {
 	if o.ContextName != "" {
 		switch o.Type {
 		case Method:
-			return s + fmt.Sprintf(" on %v", o.ContextName)
+			return s + fmt.Sprintf(" on %v(%v)",
+				o.ContextName, typeToString(o.ContextType))
 		case Field:
-			return s + fmt.Sprintf(" of %v(%v)", o.ContextName, typeToString(o.ContextType))
+			return s + fmt.Sprintf(" of %v(%v)",
+				o.ContextName, typeToString(o.ContextType))
 		}
 	}
 	return s

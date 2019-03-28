@@ -23,8 +23,8 @@ func TestParse(t *testing.T) {
 					func Exported() {
 					}`,
 			Symbols{
-				Functions: []Symbol{
-					{"Exported", 2, "", ""},
+				List: []Symbol{
+					{"Exported", Function, 2, "", Undefined},
 				},
 			},
 			nil,
@@ -36,11 +36,9 @@ func TestParse(t *testing.T) {
 					S string
 				}`,
 			Symbols{
-				Structs: []Symbol{
-					{"AStruct", 2, "", ""},
-				},
-				Fields: []Symbol{
-					{"S", 3, "AStruct", "struct"},
+				List: []Symbol{
+					{"AStruct", Struct, 2, "", Undefined},
+					{"S", Field, 3, "AStruct", Struct},
 				},
 			},
 			nil,
@@ -58,15 +56,11 @@ func TestParse(t *testing.T) {
 					func (a *AStruct) ExportedOnAStructPtr() {
 					}`,
 			Symbols{
-				Functions: []Symbol{
-					{"ExportedOnAStruct", 6, "AStruct", ""},
-					{"ExportedOnAStructPtr", 9, "*AStruct", ""},
-				},
-				Structs: []Symbol{
-					{"AStruct", 2, "", ""},
-				},
-				Fields: []Symbol{
-					{"s", 3, "AStruct", "struct"},
+				List: []Symbol{
+					{"AStruct", Struct, 2, "", Undefined},
+					{"s", Field, 3, "AStruct", Struct},
+					{"ExportedOnAStruct", Method, 6, "AStruct", Struct},
+					{"ExportedOnAStructPtr", Method, 9, "*AStruct", Struct},
 				},
 			},
 			nil,
@@ -78,11 +72,9 @@ func TestParse(t *testing.T) {
 					Meth(x string)
 				}`,
 			Symbols{
-				Interfaces: []Symbol{
-					{"AInterface", 2, "", ""},
-				},
-				Fields: []Symbol{
-					{"Meth", 3, "AInterface", "interface"},
+				List: []Symbol{
+					{"AInterface", Interface, 2, "", Undefined},
+					{"Meth", Method, 3, "AInterface", Interface},
 				},
 			},
 			nil,
@@ -90,6 +82,10 @@ func TestParse(t *testing.T) {
 	}
 
 	assertSymbol := func(desc string, a, e *Symbol) {
+		if a.Type != e.Type {
+			t.Errorf("%s: Expected symbol type %v but was %v (%v)",
+				desc, e.Type, a.Type, a)
+		}
 		if a.Name != e.Name {
 			t.Errorf("%s: Expected symbol name %v but was %v (%v)",
 				desc, e.Name, a.Name, a)
@@ -98,16 +94,17 @@ func TestParse(t *testing.T) {
 			t.Errorf("%s: Expected symbol line %v but was %v (%v)",
 				desc, e.Line, a.Line, a)
 		}
-		if a.Parent != e.Parent {
-			t.Errorf("%s: Expected symbol parent %v but was %v (%v)",
-				desc, e.Parent, a.Parent, a)
+		if a.ContextName != e.ContextName {
+			t.Errorf("%s: Expected symbol contextname %v but was %v (%v)",
+				desc, e.ContextName, a.ContextName, a)
 		}
+
 	}
 
-	assertSymbols := func(desc, objtype string, a, e []Symbol) {
+	assertSymbols := func(desc string, a, e []Symbol) {
 		if len(a) != len(e) {
-			t.Errorf("%s: Expected %v number of %v but was %v",
-				desc, len(e), objtype, len(a))
+			t.Errorf("%s: Expected %v number but was %v",
+				desc, len(e), len(a))
 			return
 		}
 		for i, m := range a {
@@ -123,16 +120,7 @@ func TestParse(t *testing.T) {
 			t.Errorf("%s: Expected error to be %v but was %v",
 				c.desc, c.err, err)
 		}
-		assertSymbols(c.desc, "methods",
-			syms.Functions, c.syms.Functions)
-		assertSymbols(c.desc, "funcs",
-			syms.Functions, c.syms.Functions)
-		assertSymbols(c.desc, "structs",
-			syms.Structs, c.syms.Structs)
-		assertSymbols(c.desc, "interfaces",
-			syms.Interfaces, c.syms.Interfaces)
-		assertSymbols(c.desc, "fields",
-			syms.Fields, c.syms.Fields)
+		assertSymbols(c.desc, syms.List, c.syms.List)
 	}
 }
 
