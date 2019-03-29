@@ -85,7 +85,9 @@ func (o *Symbols) fun(fs *token.FileSet, f *ast.FuncDecl) {
 	if f.Recv != nil {
 		// Method
 		if len(f.Recv.List) != 1 {
-			log.Println("Unexpected")
+			// This seems to happen, there is test data for this in
+			// the std library.
+			return
 		}
 		field := f.Recv.List[0]
 		context := ""
