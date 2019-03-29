@@ -18,14 +18,30 @@ func (p *ParserFake) Parse(path string) (*p.Symbols, error) {
 }
 
 var (
-	func1   = p.Symbol{"Func1", p.Function, 666, "", p.Undefined}
-	func2   = p.Symbol{"Func2", p.Function, 766, "", p.Undefined}
-	meth1   = p.Symbol{"Method1", p.Function, 100, "Struct1", p.Struct}
-	meth2   = p.Symbol{"Method2", p.Function, 123, "Struct2", p.Struct}
-	struct1 = p.Symbol{"Struct1", p.Struct, 50, "", p.Undefined}
-	struct2 = p.Symbol{"Struct2", p.Struct, 60, "", p.Undefined}
-	intf1   = p.Symbol{"Interface1", p.Interface, 75, "", p.Undefined}
-	intf2   = p.Symbol{"Interface2", p.Interface, 75, "", p.Undefined}
+	func1 = p.Symbol{
+		Name: "Func1", Type: p.Function, Line: 666,
+		ContextName: "", ContextType: p.Undefined}
+	func2 = p.Symbol{
+		Name: "Func2", Type: p.Function, Line: 766,
+		ContextName: "", ContextType: p.Undefined}
+	meth1 = p.Symbol{
+		Name: "Method1", Type: p.Function, Line: 100,
+		ContextName: "Struct1", ContextType: p.Struct}
+	meth2 = p.Symbol{
+		Name: "Method2", Type: p.Function, Line: 123,
+		ContextName: "Struct2", ContextType: p.Struct}
+	struct1 = p.Symbol{
+		Name: "Struct1", Type: p.Struct, Line: 50,
+		ContextName: "", ContextType: p.Undefined}
+	struct2 = p.Symbol{
+		Name: "Struct2", Type: p.Struct, Line: 60,
+		ContextName: "", ContextType: p.Undefined}
+	intf1 = p.Symbol{
+		Name: "Interface1", Type: p.Interface, Line: 75,
+		ContextName: "", ContextType: p.Undefined}
+	intf2 = p.Symbol{
+		Name: "Interface2", Type: p.Interface, Line: 75,
+		ContextName: "", ContextType: p.Undefined}
 )
 
 func symsOneOfEach() *p.Symbols {
