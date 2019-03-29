@@ -5,8 +5,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/2hdddg/gop/parser"
-	"github.com/2hdddg/gop/tree"
+	"github.com/2hdddg/gop/pkg/parser"
+	"github.com/2hdddg/gop/pkg/tree"
 )
 
 type Package struct {

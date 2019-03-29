@@ -6,9 +6,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/2hdddg/gop/client"
-	"github.com/2hdddg/gop/config"
-	"github.com/2hdddg/gop/server"
+	"github.com/2hdddg/gop/cmd/gop/client"
+	"github.com/2hdddg/gop/cmd/gop/server"
+	"github.com/2hdddg/gop/pkg/config"
 )
 
 func serve() {

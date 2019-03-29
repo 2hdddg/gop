@@ -6,9 +6,9 @@ import (
 	"log"
 	"net/rpc"
 
-	"github.com/2hdddg/gop/config"
-	"github.com/2hdddg/gop/index"
-	"github.com/2hdddg/gop/tree"
+	"github.com/2hdddg/gop/pkg/config"
+	"github.com/2hdddg/gop/pkg/index"
+	"github.com/2hdddg/gop/pkg/tree"
 )
 
 type Service struct {

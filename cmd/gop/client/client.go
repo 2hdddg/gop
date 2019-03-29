@@ -6,9 +6,9 @@ import (
 	"net/rpc"
 	"strconv"
 
-	"github.com/2hdddg/gop/config"
-	"github.com/2hdddg/gop/parser"
-	"github.com/2hdddg/gop/service/search"
+	"github.com/2hdddg/gop/pkg/config"
+	"github.com/2hdddg/gop/pkg/parser"
+	"github.com/2hdddg/gop/pkg/service/search"
 )
 
 type Params struct {

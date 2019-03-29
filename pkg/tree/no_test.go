@@ -2,13 +2,14 @@ package tree
 
 import (
 	"fmt"
-	"github.com/2hdddg/gop/parser"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/2hdddg/gop/pkg/parser"
 )
 
 func assertPath(t *testing.T, expected, actual string) {
