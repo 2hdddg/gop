@@ -40,17 +40,40 @@ func search() {
 	client.Run(config, port, &params)
 }
 
+type command struct {
+	name    string
+	descr   string
+	handler func()
+}
+
+var commands = []command{
+	command{name: "serve", descr: "Start server", handler: serve},
+	command{name: "search", descr: "Search", handler: search},
+}
+
+func showRootUsage() {
+	fmt.Println("Usage:")
+	for _, c := range commands {
+		fmt.Printf("%v %v\n", c.name, c.descr)
+	}
+}
+
 func main() {
-	command := os.Args[1]
-	switch command {
-	case "serve":
-		serve()
-	case "search":
-		search()
-	default:
-		fmt.Println("Illegal command")
+	if len(os.Args) <= 1 {
+		showRootUsage()
 		return
 	}
+
+	name := os.Args[1]
+	for _, c := range commands {
+		if c.name == name {
+			c.handler()
+			return
+		}
+	}
+
+	fmt.Println("Illegal command")
+	showRootUsage()
 }
 
 /*
