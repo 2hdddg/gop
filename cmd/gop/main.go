@@ -31,7 +31,7 @@ func search() {
 
 	flags := flag.NewFlagSet("search", flag.ExitOnError)
 	flags.IntVar(&port, "port", 8080, "Server port")
-	flags.StringVar(&params.Name, "name", "", "Find function")
+	flags.StringVar(&params.Name, "name", "", "Find definition")
 	flags.StringVar(&params.FilePath, "file", "", "Go file")
 	flags.Parse(os.Args[2:])
 

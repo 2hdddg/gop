@@ -2,8 +2,8 @@ package server
 
 import (
 	"github.com/2hdddg/gop/pkg/config"
+	"github.com/2hdddg/gop/pkg/service/index"
 	"github.com/2hdddg/gop/pkg/service/search"
-	"github.com/2hdddg/gop/pkg/tree"
 
 	"log"
 	"net"
@@ -12,30 +12,22 @@ import (
 	"strconv"
 )
 
-func build(path string, progress tree.Progress) {
-	builder, err := tree.NewBuilder(path)
-	builder.Progress = progress
-	_, err = builder.Build()
-	if err != nil {
-		log.Fatalf("Failed to build tree: %s", err)
-	}
-}
-
 func Run(config *config.Config, port int) {
-	service := search.NewService()
-	err := service.Start()
+	searchSrv := search.NewService()
+	err := searchSrv.Start()
 	if err != nil {
-		log.Fatalf("Failed to register search service: %s", err)
+		log.Fatalf("Failed to start search service: %s", err)
+	}
+	// Search service implements progress interface
+	indexSrv := index.NewService(searchSrv)
+	err = indexSrv.Start()
+	if err != nil {
+		log.Fatalf("Failed to start index service: %s", err)
 	}
 
-	// Build takes a while, run this in a go routine so that the
-	// server starts fast.
-	// Report build progress to search service, this makes
-	// it possible for search service to build incomplete
-	// indexes early on to be able to serve some results (but
-	// incomplete)
 	for _, root := range config.Paths() {
-		go build(root, service)
+		log.Println("Adding ", root)
+		indexSrv.Add(root)
 	}
 
 	log.Printf("Starting server on port %d", port)
