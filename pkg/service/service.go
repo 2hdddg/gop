@@ -9,7 +9,6 @@ import (
 	"github.com/2hdddg/gop/pkg/tree"
 )
 
-// Exposed over RPC
 type SearchReq struct {
 	Name    string
 	Imports []string
@@ -39,7 +38,9 @@ type Service struct {
 	indexChan  chan *indexMsg
 }
 
-type ackMsg struct{}
+type ackMsg struct {
+	err error
+}
 
 type searchMsg struct {
 	ackChan   chan ackMsg
@@ -66,7 +67,10 @@ func NewService() *Service {
 	}
 }
 
-func search(req *SearchReq, res *SearchRes, indexmap map[string]*index.Index) {
+func search(msg *searchMsg, indexmap map[string]*index.Index) {
+	req := msg.clientReq
+	res := msg.clientRes
+
 	// Copy the needed indexes from map to list to make sure that
 	// we can return to search fast and continue the search in a
 	// go routine.
@@ -117,9 +121,12 @@ func (s *Service) service() {
 			go func() {
 				builder, err := tree.NewBuilder(i.clientReq.Path)
 				if err != nil {
-					log.Printf("Failed to init tree %v\n", err)
+					i.ackChan <- ackMsg{err: err}
 					return
 				}
+				// Do the rest async from client
+				i.ackChan <- ackMsg{}
+
 				builder.Progress = s
 				_, err = builder.Build()
 				if err != nil {
@@ -138,7 +145,7 @@ func (s *Service) service() {
 			indexes[m.RootPath] = m
 		// Perform search
 		case m := <-s.searchChan:
-			search(m.clientReq, m.clientRes, indexes)
+			search(m, indexes)
 			m.ackChan <- ackMsg{}
 		}
 	}
@@ -152,7 +159,7 @@ func (s *Service) Start() error {
 	return nil
 }
 
-func (s *Service) NewOrUpdatedTree(t *tree.Tree) {
+func (s *Service) newOrUpdatedTree(t *tree.Tree) {
 	ackChan := make(chan ackMsg)
 	s.treeChan <- &treeMsg{
 		tree:    t,
@@ -167,7 +174,7 @@ func (s *Service) OnPackageParsed(t *tree.Tree, p *tree.Package) {
 
 // Implements tree Progress interface
 func (s *Service) OnTreeParsed(t *tree.Tree) {
-	s.NewOrUpdatedTree(t)
+	s.newOrUpdatedTree(t)
 }
 
 // RPC function
@@ -192,11 +199,20 @@ func Search(c *rpc.Client, req *SearchReq) (*SearchRes, error) {
 	return res, nil
 }
 
+// RPC function
 func (s *Service) Index(req *IndexReq, res *IndexRes) error {
-	s.indexChan <- &indexMsg{clientReq: req}
-	return nil
+	ackChan := make(chan ackMsg)
+	s.indexChan <- &indexMsg{
+		clientReq: req,
+		clientRes: res,
+		ackChan:   ackChan,
+	}
+	a := <-ackChan
+
+	return a.err
 }
 
+// Called from RPC client. Wrapper.
 func Index(c *rpc.Client, req *IndexReq) (*IndexRes, error) {
 	res := &IndexRes{}
 	if err := c.Call("Search.Index", req, res); err != nil {
