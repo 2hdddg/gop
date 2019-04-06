@@ -27,6 +27,13 @@ type IndexReq struct {
 type IndexRes struct {
 }
 
+type IndexesReq struct {
+}
+
+type IndexesRes struct {
+	Indexes []string
+}
+
 type Hit struct {
 	Path  string
 	Line  int
@@ -34,9 +41,10 @@ type Hit struct {
 }
 
 type Service struct {
-	treeChan   chan *treeMsg
-	searchChan chan *searchMsg
-	indexChan  chan *indexMsg
+	treeChan    chan *treeMsg
+	searchChan  chan *searchMsg
+	indexChan   chan *indexMsg
+	indexesChan chan *indexesMsg
 }
 
 type RpcService struct {
@@ -64,11 +72,17 @@ type indexMsg struct {
 	clientRes *IndexRes
 }
 
+type indexesMsg struct {
+	ackChan   chan ackMsg
+	clientRes *IndexesRes
+}
+
 func NewService() *Service {
 	return &Service{
-		treeChan:   make(chan *treeMsg),
-		searchChan: make(chan *searchMsg),
-		indexChan:  make(chan *indexMsg),
+		treeChan:    make(chan *treeMsg),
+		searchChan:  make(chan *searchMsg),
+		indexChan:   make(chan *indexMsg),
+		indexesChan: make(chan *indexesMsg),
 	}
 }
 
@@ -155,6 +169,15 @@ func (s *Service) service() {
 		case m := <-s.searchChan:
 			search(m, indexes)
 			m.ackChan <- ackMsg{}
+		// Query for indexes
+		case i := <-s.indexesChan:
+			i.clientRes.Indexes = make([]string, len(indexes))
+			n := 0
+			for k := range indexes {
+				i.clientRes.Indexes[n] = k
+				n++
+			}
+			i.ackChan <- ackMsg{}
 		}
 	}
 }
@@ -229,6 +252,26 @@ func (r *RpcService) Index(req *IndexReq, res *IndexRes) error {
 func Index(c *rpc.Client, req *IndexReq) (*IndexRes, error) {
 	res := &IndexRes{}
 	if err := c.Call("Search.Index", req, res); err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+func (r *RpcService) Indexes(req *IndexesReq, res *IndexesRes) error {
+	ackChan := make(chan ackMsg)
+	r.service.indexesChan <- &indexesMsg{
+		clientRes: res,
+		ackChan:   ackChan,
+	}
+	a := <-ackChan
+
+	return a.err
+}
+
+func Indexes(c *rpc.Client) (*IndexesRes, error) {
+	res := &IndexesRes{}
+	req := &IndexesRes{}
+	if err := c.Call("Search.Indexes", req, res); err != nil {
 		return nil, err
 	}
 	return res, nil

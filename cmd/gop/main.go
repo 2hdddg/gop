@@ -16,6 +16,7 @@ var commands = []command{
 	command{name: "serve", descr: "Start server", handler: serve},
 	command{name: "search", descr: "Search", handler: search},
 	command{name: "index", descr: "Index path", handler: index},
+	command{name: "indexes", descr: "List indexes", handler: indexes},
 }
 
 func showRootUsage() {

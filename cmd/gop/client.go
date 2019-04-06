@@ -103,3 +103,19 @@ func index() {
 		log.Fatalf("Failed to call server: %v", err)
 	}
 }
+
+func indexes() {
+	var port int
+
+	flags := flag.NewFlagSet("indexes", flag.ExitOnError)
+	flags.IntVar(&port, "port", 8080, "Server port")
+	flags.Parse(os.Args[2:])
+	client := connectToServer(port)
+	res, err := service.Indexes(client)
+	if err != nil {
+		log.Fatalf("Failed to call server: %v", err)
+	}
+	for _, i := range res.Indexes {
+		fmt.Printf("%s\n", i)
+	}
+}
