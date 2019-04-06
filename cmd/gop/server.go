@@ -1,25 +1,35 @@
-package server
+package main
 
 import (
-	"github.com/2hdddg/gop/pkg/config"
-	"github.com/2hdddg/gop/pkg/service/index"
-	"github.com/2hdddg/gop/pkg/service/search"
-
+	"flag"
 	"log"
 	"net"
 	"net/http"
 	"net/rpc"
+	"os"
 	"strconv"
+
+	"github.com/2hdddg/gop/pkg/config"
+	indexservice "github.com/2hdddg/gop/pkg/service/index"
+	searchservice "github.com/2hdddg/gop/pkg/service/search"
 )
 
-func Run(config *config.Config, port int) {
-	searchSrv := search.NewService()
+func serve() {
+	var port int
+
+	flags := flag.NewFlagSet("serve", flag.ExitOnError)
+	flags.IntVar(&port, "port", 8080, "Server port")
+	flags.Parse(os.Args[2:])
+
+	config := config.NewConfig()
+
+	searchSrv := searchservice.NewService()
 	err := searchSrv.Start()
 	if err != nil {
 		log.Fatalf("Failed to start search service: %s", err)
 	}
 	// Search service implements progress interface
-	indexSrv := index.NewService(searchSrv)
+	indexSrv := indexservice.NewService(searchSrv)
 	err = indexSrv.Start()
 	if err != nil {
 		log.Fatalf("Failed to start index service: %s", err)

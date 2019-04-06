@@ -28,7 +28,15 @@ func registerRpcInstance(ch chan *indexPathMsg) error {
 	return nil
 }
 
-func (i *RpcInstance) Add(req *IndexRequest, res *IndexResponse) error {
+func (i *RpcInstance) Index(req *IndexRequest, res *IndexResponse) error {
 	i.indexPathChan <- &indexPathMsg{path: req.Path}
 	return nil
+}
+
+func Index(c *rpc.Client, req *IndexRequest) (*IndexResponse, error) {
+	res := &IndexResponse{}
+	if err := c.Call("Index.Index", req, res); err != nil {
+		return nil, err
+	}
+	return res, nil
 }

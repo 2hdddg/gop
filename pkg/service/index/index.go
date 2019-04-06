@@ -30,10 +30,15 @@ func (s *Service) service() {
 		case i := <-s.indexPathChan:
 			go func() {
 				builder, err := tree.NewBuilder(i.path)
+				if err != nil {
+					log.Printf("Failed to init tree %v\n", err)
+					return
+				}
 				builder.Progress = s.progress
 				_, err = builder.Build()
 				if err != nil {
-					log.Fatalf("Failed to build tree: %s", err)
+					log.Printf("Failed to build tree: %s\n", err)
+					return
 				}
 			}()
 		}
