@@ -2,7 +2,6 @@ package tree
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -118,7 +117,6 @@ func (f *FakeDir) findDir(name string) *FakeDir {
 }
 
 func (root *FakeDir) ReadDirectory(dirpath string) (fis []os.FileInfo, err error) {
-	log.Printf("In readdir %v", dirpath)
 	parts := strings.Split(filepath.ToSlash(dirpath), "/")
 	if len(parts) == 0 {
 		err = fmt.Errorf("Empty path")

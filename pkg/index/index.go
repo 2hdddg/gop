@@ -1,7 +1,6 @@
 package index
 
 import (
-	"log"
 	"path"
 	"strings"
 
@@ -171,7 +170,4 @@ func (i *Index) Query(q *Query, onHit OnHit, onPack OnPackage) {
 		onPack(*p)
 		num++
 	}
-
-	log.Printf("Index %v queried for '%v', %v hits",
-		i.RootPath, q.Name, num)
 }

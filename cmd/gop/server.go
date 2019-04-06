@@ -28,11 +28,6 @@ func serve() {
 		log.Fatalf("Failed to start search service: %s", err)
 	}
 
-	for _, root := range config.Paths() {
-		log.Println("Adding ", root)
-		srv.Index(&service.IndexReq{Path: root}, &service.IndexRes{})
-	}
-
 	log.Printf("Starting server on port %d", port)
 	rpc.HandleHTTP()
 	l, err := net.Listen("tcp", ":"+strconv.Itoa(port))
@@ -40,6 +35,12 @@ func serve() {
 		log.Fatalf("Failed to listen on tcp port %d: %s",
 			port, err)
 	}
+
+	// Build default indexes
+	for _, root := range config.Paths() {
+		srv.Index(&service.IndexReq{Path: root}, &service.IndexRes{})
+	}
+
 	err = http.Serve(l, nil)
 	if err != nil {
 		log.Fatalf("Failed to start http server: %s", err)

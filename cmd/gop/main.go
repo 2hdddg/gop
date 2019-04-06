@@ -26,7 +26,7 @@ func showRootUsage() {
 }
 
 func main() {
-	log.SetFlags(log.Ltime | log.Lshortfile)
+	log.SetFlags(0)
 	if len(os.Args) <= 1 {
 		showRootUsage()
 		return

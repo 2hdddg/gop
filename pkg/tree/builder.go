@@ -2,7 +2,6 @@ package tree
 
 import (
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -76,7 +75,6 @@ func (b *Builder) pack(name, path string) (err error) {
 	if b.Progress != nil {
 		b.Progress.OnPackageParsed(b.tree, p)
 	}
-	log.Printf("Parsed package %v", name)
 
 	for _, dir := range dirs {
 		fullName := name + "/" + dir
@@ -89,7 +87,6 @@ func (b *Builder) pack(name, path string) (err error) {
 func (b *Builder) probe(dir string) (dirs, files []string, err error) {
 	fis, err := b.reader.ReadDirectory(dir)
 	if err != nil {
-		log.Printf("Error reading %v", dir)
 		return
 	}
 

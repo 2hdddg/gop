@@ -6,7 +6,6 @@ import (
 	"go/parser"
 	"go/token"
 	"io/ioutil"
-	"log"
 	"strconv"
 )
 
@@ -58,8 +57,6 @@ func typeToString(t Type) string {
 func (o *Symbol) ToString() string {
 	s := typeToString(o.Type)
 
-	fmt.Println(*o)
-
 	if o.ContextName != "" {
 		switch o.Type {
 		case Method:
@@ -102,7 +99,7 @@ func (o *Symbols) fun(fs *token.FileSet, f *ast.FuncDecl) {
 				//log.Printf("Unexpected *: %T", y)
 			}
 		default:
-			log.Printf("Unexpected: %T", x)
+			//log.Printf("Unexpected: %T", x)
 		}
 		o.add(Symbol{
 			Name:        f.Name.Name,
@@ -162,7 +159,6 @@ func (o *Symbols) Parse(code string) error {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, "", code, 0)
 	if err != nil {
-		log.Println(err)
 		return err
 	}
 
@@ -192,7 +188,6 @@ func parseImports(code string) ([]string, error) {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, "", code, parser.ImportsOnly)
 	if err != nil {
-		log.Println(err)
 		return nil, err
 	}
 
