@@ -5,9 +5,9 @@ import (
 
 	"fmt"
 
-	"github.com/2hdddg/gop/pkg/config"
-	"github.com/2hdddg/gop/pkg/index"
-	"github.com/2hdddg/gop/pkg/tree"
+	"github.com/2hdddg/gop/config"
+	"github.com/2hdddg/gop/index"
+	"github.com/2hdddg/gop/tree"
 )
 
 type SearchReq struct {

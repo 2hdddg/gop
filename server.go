@@ -9,8 +9,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/2hdddg/gop/pkg/config"
-	service "github.com/2hdddg/gop/pkg/service"
+	"github.com/2hdddg/gop/config"
+	service "github.com/2hdddg/gop/service"
 )
 
 func serve() {

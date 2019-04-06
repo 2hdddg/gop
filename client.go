@@ -8,9 +8,9 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/2hdddg/gop/pkg/config"
-	"github.com/2hdddg/gop/pkg/parser"
-	"github.com/2hdddg/gop/pkg/service"
+	"github.com/2hdddg/gop/config"
+	"github.com/2hdddg/gop/parser"
+	"github.com/2hdddg/gop/service"
 )
 
 func connectToServer(port int) *rpc.Client {

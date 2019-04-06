@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	p "github.com/2hdddg/gop/pkg/parser"
-	"github.com/2hdddg/gop/pkg/tree"
+	p "github.com/2hdddg/gop/parser"
+	"github.com/2hdddg/gop/tree"
 )
 
 type ParserFake struct {

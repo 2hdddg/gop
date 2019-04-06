@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/2hdddg/gop/pkg/parser"
+	"github.com/2hdddg/gop/parser"
 )
 
 func assertPath(t *testing.T, expected, actual string) {

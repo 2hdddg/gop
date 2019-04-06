@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/2hdddg/gop/pkg/parser"
+	"github.com/2hdddg/gop/parser"
 )
 
 type File struct {
