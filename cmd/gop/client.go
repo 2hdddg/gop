@@ -10,8 +10,7 @@ import (
 
 	"github.com/2hdddg/gop/pkg/config"
 	"github.com/2hdddg/gop/pkg/parser"
-	indexservice "github.com/2hdddg/gop/pkg/service/index"
-	searchservice "github.com/2hdddg/gop/pkg/service/search"
+	"github.com/2hdddg/gop/pkg/service"
 )
 
 func connectToServer(port int) *rpc.Client {
@@ -64,12 +63,12 @@ func search() {
 		}
 	}
 
-	req := &searchservice.Request{
+	req := &service.SearchReq{
 		Config:  *config,
 		Name:    name,
 		Imports: imports,
 	}
-	res, err := searchservice.Search(client, req)
+	res, err := service.Search(client, req)
 	if err != nil {
 		log.Fatalf("Failed to call server: %v", err)
 	}
@@ -96,10 +95,10 @@ func index() {
 		return
 	}
 	client := connectToServer(port)
-	req := &indexservice.IndexRequest{
+	req := &service.IndexReq{
 		Path: path,
 	}
-	_, err := indexservice.Index(client, req)
+	_, err := service.Index(client, req)
 	if err != nil {
 		log.Fatalf("Failed to call server: %v", err)
 	}

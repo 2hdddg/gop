@@ -1,6 +1,4 @@
-package search
-
-// Search service
+package service
 
 import (
 	"log"
@@ -11,41 +9,42 @@ import (
 	"github.com/2hdddg/gop/pkg/tree"
 )
 
-type Service struct {
-	treeChan chan *treeMsg
-	reqChan  chan *requestMsg
-}
-
-// RPC instance
-type Instance struct {
-	reqChan chan *requestMsg
-}
-
 // Exposed over RPC
-type Request struct {
+type SearchReq struct {
 	Name    string
 	Imports []string
 	Config  config.Config
 }
 
-// Exposed over RPC
-type Response struct {
+type SearchRes struct {
 	Hits []Hit
 }
 
-// Exposed over RPC
+type IndexReq struct {
+	Path string
+}
+
+type IndexRes struct {
+}
+
 type Hit struct {
 	Path  string
 	Line  int
 	Descr string
 }
 
+type Service struct {
+	treeChan   chan *treeMsg
+	searchChan chan *searchMsg
+	indexChan  chan *indexMsg
+}
+
 type ackMsg struct{}
 
-type requestMsg struct {
+type searchMsg struct {
 	ackChan   chan ackMsg
-	clientReq *Request
-	clientRes *Response
+	clientReq *SearchReq
+	clientRes *SearchRes
 }
 
 type treeMsg struct {
@@ -53,14 +52,21 @@ type treeMsg struct {
 	tree    *tree.Tree
 }
 
+type indexMsg struct {
+	ackChan   chan ackMsg
+	clientReq *IndexReq
+	clientRes *IndexRes
+}
+
 func NewService() *Service {
 	return &Service{
-		treeChan: make(chan *treeMsg),
-		reqChan:  make(chan *requestMsg),
+		treeChan:   make(chan *treeMsg),
+		searchChan: make(chan *searchMsg),
+		indexChan:  make(chan *indexMsg),
 	}
 }
 
-func search(req *Request, res *Response, indexmap map[string]*index.Index) {
+func search(req *SearchReq, res *SearchRes, indexmap map[string]*index.Index) {
 	// Copy the needed indexes from map to list to make sure that
 	// we can return to search fast and continue the search in a
 	// go routine.
@@ -106,16 +112,32 @@ func (s *Service) service() {
 
 	for {
 		select {
+		// Start building a tree
+		case i := <-s.indexChan:
+			go func() {
+				builder, err := tree.NewBuilder(i.clientReq.Path)
+				if err != nil {
+					log.Printf("Failed to init tree %v\n", err)
+					return
+				}
+				builder.Progress = s
+				_, err = builder.Build()
+				if err != nil {
+					log.Printf("Failed to build tree: %s\n", err)
+					return
+				}
+			}()
+		// New tree received, build index
 		case m := <-s.treeChan:
-			log.Println("Got new/updated tree")
 			go func() {
 				indexChan <- index.Build(m.tree)
 				m.ackChan <- ackMsg{}
 			}()
+		// Received index built in go routine above.
 		case m := <-indexChan:
-			// Received index built in go routine above.
 			indexes[m.RootPath] = m
-		case m := <-s.reqChan:
+		// Perform search
+		case m := <-s.searchChan:
 			search(m.clientReq, m.clientRes, indexes)
 			m.ackChan <- ackMsg{}
 		}
@@ -123,9 +145,7 @@ func (s *Service) service() {
 }
 
 func (s *Service) Start() error {
-	i := &Instance{reqChan: s.reqChan}
-	err := rpc.RegisterName("Search", i)
-	if err != nil {
+	if err := rpc.RegisterName("Search", s); err != nil {
 		return err
 	}
 	go s.service()
@@ -150,9 +170,10 @@ func (s *Service) OnTreeParsed(t *tree.Tree) {
 	s.NewOrUpdatedTree(t)
 }
 
-func (i *Instance) Search(req *Request, res *Response) error {
+// RPC function
+func (s *Service) Search(req *SearchReq, res *SearchRes) error {
 	ackChan := make(chan ackMsg)
-	i.reqChan <- &requestMsg{
+	s.searchChan <- &searchMsg{
 		clientReq: req,
 		clientRes: res,
 		ackChan:   ackChan,
@@ -163,9 +184,22 @@ func (i *Instance) Search(req *Request, res *Response) error {
 }
 
 // Called from RPC client. Wrapper.
-func Search(c *rpc.Client, req *Request) (*Response, error) {
-	res := &Response{}
+func Search(c *rpc.Client, req *SearchReq) (*SearchRes, error) {
+	res := &SearchRes{}
 	if err := c.Call("Search.Search", req, res); err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+func (s *Service) Index(req *IndexReq, res *IndexRes) error {
+	s.indexChan <- &indexMsg{clientReq: req}
+	return nil
+}
+
+func Index(c *rpc.Client, req *IndexReq) (*IndexRes, error) {
+	res := &IndexRes{}
+	if err := c.Call("Search.Index", req, res); err != nil {
 		return nil, err
 	}
 	return res, nil
